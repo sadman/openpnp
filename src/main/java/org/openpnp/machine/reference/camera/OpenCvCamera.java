@@ -53,6 +53,8 @@ public class OpenCvCamera extends ReferenceCamera implements Runnable {
     private int preferredWidth;
     @Attribute(required = false)
     private int preferredHeight;
+    @Attribute(required = false)
+    private int fps = 24;
 
     private VideoCapture fg = new VideoCapture();
     private Thread thread;
@@ -63,26 +65,28 @@ public class OpenCvCamera extends ReferenceCamera implements Runnable {
     @Override
     public synchronized BufferedImage capture() {
         if (thread == null) {
-            setDeviceIndex(deviceIndex);
+            initCamera();
         }
+        Mat mat = new Mat();
         try {
-            Mat mat = new Mat();
             if (!fg.read(mat)) {
                 return null;
             }
             BufferedImage img = OpenCvUtils.toBufferedImage(mat);
-            mat.release();
             return transformImage(img);
         }
         catch (Exception e) {
             return null;
+        }
+        finally {
+            mat.release();
         }
     }
 
     @Override
     public synchronized void startContinuousCapture(CameraListener listener, int maximumFps) {
         if (thread == null) {
-            setDeviceIndex(deviceIndex);
+            initCamera();
         }
         super.startContinuousCapture(listener, maximumFps);
     }
@@ -99,7 +103,7 @@ public class OpenCvCamera extends ReferenceCamera implements Runnable {
                 e.printStackTrace();
             }
             try {
-                Thread.sleep(1000 / 24);
+                Thread.sleep(1000 / fps);
             }
             catch (InterruptedException e) {
                 break;
@@ -107,12 +111,7 @@ public class OpenCvCamera extends ReferenceCamera implements Runnable {
         }
     }
 
-    public int getDeviceIndex() {
-        return deviceIndex;
-    }
-
-    public synchronized void setDeviceIndex(int deviceIndex) {
-        this.deviceIndex = deviceIndex;
+    private void initCamera() {
         if (thread != null) {
             thread.interrupt();
             try {
@@ -127,6 +126,7 @@ public class OpenCvCamera extends ReferenceCamera implements Runnable {
             setDirty(false);
             width = null;
             height = null;
+
             fg.open(deviceIndex);
             if (preferredWidth != 0) {
                 fg.set(Highgui.CV_CAP_PROP_FRAME_WIDTH, preferredWidth);
@@ -141,6 +141,33 @@ public class OpenCvCamera extends ReferenceCamera implements Runnable {
         }
         thread = new Thread(this);
         thread.start();
+    }
+
+    @Override
+    public void close() throws IOException {
+        super.close();
+        if (thread != null) {
+            thread.interrupt();
+            try {
+                thread.join();
+            }
+            catch (Exception e) {
+
+            }
+        }
+        if (fg.isOpened()) {
+            fg.release();
+        }
+    }
+
+    public int getDeviceIndex() {
+        return deviceIndex;
+    }
+
+    public synchronized void setDeviceIndex(int deviceIndex) {
+        this.deviceIndex = deviceIndex;
+
+        initCamera();
     }
 
     public int getPreferredWidth() {
@@ -159,6 +186,14 @@ public class OpenCvCamera extends ReferenceCamera implements Runnable {
     public void setPreferredHeight(int preferredHeight) {
         this.preferredHeight = preferredHeight;
         setDirty(true);
+    }
+
+    public int getFps() {
+        return fps;
+    }
+
+    public void setFps(int fps) {
+        this.fps = fps;
     }
 
     public boolean isDirty() {
@@ -196,22 +231,5 @@ public class OpenCvCamera extends ReferenceCamera implements Runnable {
     public Action[] getPropertySheetHolderActions() {
         // TODO Auto-generated method stub
         return null;
-    }
-
-    @Override
-    public void close() throws IOException {
-        super.close();
-        if (thread != null) {
-            thread.interrupt();
-            try {
-                thread.join();
-            }
-            catch (Exception e) {
-
-            }
-        }
-        if (fg.isOpened()) {
-            fg.release();
-        }
     }
 }

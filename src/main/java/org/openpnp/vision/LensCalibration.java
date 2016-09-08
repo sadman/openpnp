@@ -70,6 +70,20 @@ public class LensCalibration {
         // and then add it to the list with each processed image.
         objectPoints = calculateObjectPoints();
     }
+    
+    public void close() {
+    	if (cameraMatrix != null) {
+    		cameraMatrix.release();
+    	}
+    	if (distortionCoefficients != null) {
+    		distortionCoefficients.release();
+    	}
+    	
+    	objectPoints.release();
+    	for (Mat imagePoints : imagePointsList) {
+    		imagePoints.release();
+    	}
+    }
 
     public Mat apply(Mat mat) {
         if (imageSize == null) {
@@ -130,6 +144,15 @@ public class LensCalibration {
                     cameraMatrix, distortionCoefficients, rvecs, tvecs);
         }
 
+        for (Mat rvec : rvecs) {
+        	rvec.release();
+        }
+        rvecs.clear();
+        for (Mat tvec : tvecs) {
+        	tvec.release();
+        }
+        tvecs.clear();
+        
         boolean ok = Core.checkRange(cameraMatrix) && Core.checkRange(distortionCoefficients);
 
         logger.info("calibrate() ok {}, rms {}", ok, rms);
@@ -137,6 +160,9 @@ public class LensCalibration {
         if (ok) {
             this.cameraMatrix = cameraMatrix;
             this.distortionCoefficients = distortionCoefficients;
+        } else {
+        	cameraMatrix.release();
+        	distortionCoefficients.release();
         }
 
         return ok;
@@ -177,6 +203,7 @@ public class LensCalibration {
                     Imgproc.cvtColor(mat, matGray, Imgproc.COLOR_BGR2GRAY);
                     Imgproc.cornerSubPix(matGray, imagePoints, new Size(11, 11), new Size(-1, -1),
                             new TermCriteria(TermCriteria.EPS + TermCriteria.COUNT, 30, 0.1));
+                    matGray.release();
                 }
                 break;
             case CirclesGrid:
@@ -187,7 +214,12 @@ public class LensCalibration {
                         Calib3d.CALIB_CB_ASYMMETRIC_GRID);
                 break;
         }
-        return found ? imagePoints : null;
+        if (found) {
+        	return imagePoints;
+        } else {
+        	imagePoints.release();
+        	return null;
+        }
     }
 
     private MatOfPoint3f calculateObjectPoints() {

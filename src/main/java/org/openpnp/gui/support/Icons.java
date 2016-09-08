@@ -34,17 +34,29 @@ public class Icons {
     public static Icon showPart = getIcon("/icons/feeder-show-part-outline.svg");
     public static Icon editFeeder = getIcon("/icons/feeder-edit.svg");
 
+    public static Icon partAlign = getIcon("/icons/part-align.svg");
+
     public static Icon arrowUp = getIcon("/icons/ic_arrow_upward_black_18px.svg");
     public static Icon arrowDown = getIcon("/icons/ic_arrow_downward_black_18px.svg");
     public static Icon arrowLeft = getIcon("/icons/ic_arrow_back_black_18px.svg");
     public static Icon arrowRight = getIcon("/icons/ic_arrow_forward_black_18px.svg");
     public static Icon home = getIcon("/icons/ic_home_black_18px.svg");
-    public static Icon refresh = getIcon("/icons/ic_home_black_18px.svg");
+    public static Icon refresh = getIcon("/icons/ic_refresh_black_18px.svg");
     public static Icon rotateClockwise = getIcon("/icons/ic_rotate_clockwise_black_18px.svg");
     public static Icon rotateCounterclockwise =
             getIcon("/icons/ic_rotate_counterclockwise_black_18px.svg");
     public static Icon zero = getIcon("/icons/ic_exposure_zero_black_18px.svg");
+    
+    public static Icon navigateFirst = getIcon("/icons/ic_first_page_black_18px.svg");
+    public static Icon navigateLast = getIcon("/icons/ic_last_page_black_18px.svg");
+    public static Icon navigatePrevious = getIcon("/icons/ic_chevron_left_black_18px.svg");
+    public static Icon navigateNext = getIcon("/icons/ic_chevron_right_black_18px.svg");
 
+    public static Icon powerOn = getIcon("/icons/power_button_on.svg");
+    public static Icon powerOff = getIcon("/icons/power_button_off.svg");
+    
+    public static Icon park = getIcon("/icons/park.svg");
+    
     public static Icon getIcon(String resourceName, int width, int height) {
         if (resourceName.endsWith(".svg")) {
             return new SvgIcon(Icons.class.getResource(resourceName), width, height);

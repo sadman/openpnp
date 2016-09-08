@@ -169,7 +169,7 @@ public class Location {
 
     /**
      * Returns a new Location with the given Location's X, Y, and Z components added to this
-     * Location's X, Y, and Z components. Rotation is left unchanged.
+     * Location's X, Y, and Z components. Rotation is included.
      * 
      * @param l
      * @return
@@ -264,6 +264,13 @@ public class Location {
 
         return new Location(getUnits(), getX() * Math.cos(angle) - getY() * Math.sin(angle),
                 getX() * Math.sin(angle) + getY() * Math.cos(angle), getZ(), getRotation());
+    }
+    
+    public Location rotateXyCenterPoint(Location center, double angle) {
+        Location location = this.subtract(center);
+        location = location.rotateXy(angle);
+        location = location.add(center);
+        return location;
     }
 
     @Override

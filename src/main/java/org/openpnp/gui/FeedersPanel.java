@@ -346,13 +346,13 @@ public class FeedersPanel extends JPanel implements WizardContainer {
             new Thread() {
                 public void run() {
                     Feeder feeder = getSelectedFeeder();
-                    Nozzle nozzle = MainFrame.machineControlsPanel.getSelectedNozzle();
+                    Nozzle nozzle = MainFrame.get().getMachineControls().getSelectedNozzle();
 
                     try {
-                        nozzle.moveToSafeZ(1.0);
+                        nozzle.moveToSafeZ();
                         feeder.feed(nozzle);
                         Location pickLocation = feeder.getPickLocation();
-                        MovableUtils.moveToLocationAtSafeZ(nozzle, pickLocation, 1.0);
+                        MovableUtils.moveToLocationAtSafeZ(nozzle, pickLocation);
                     }
                     catch (Exception e) {
                         MessageBoxes.errorBox(FeedersPanel.this, "Feed Error", e);
@@ -374,15 +374,15 @@ public class FeedersPanel extends JPanel implements WizardContainer {
             new Thread() {
                 public void run() {
                     Feeder feeder = getSelectedFeeder();
-                    Nozzle nozzle = MainFrame.machineControlsPanel.getSelectedNozzle();
+                    Nozzle nozzle = MainFrame.get().getMachineControls().getSelectedNozzle();
 
                     try {
-                        nozzle.moveToSafeZ(1.0);
+                        nozzle.moveToSafeZ();
                         feeder.feed(nozzle);
                         Location pickLocation = feeder.getPickLocation();
-                        MovableUtils.moveToLocationAtSafeZ(nozzle, pickLocation, 1.0);
-                        nozzle.pick();
-                        nozzle.moveToSafeZ(1.0);
+                        MovableUtils.moveToLocationAtSafeZ(nozzle, pickLocation);
+                        nozzle.pick(feeder.getPart());
+                        nozzle.moveToSafeZ();
                     }
                     catch (Exception e) {
                         MessageBoxes.errorBox(FeedersPanel.this, "Feed Error", e);
@@ -404,10 +404,10 @@ public class FeedersPanel extends JPanel implements WizardContainer {
         public void actionPerformed(ActionEvent arg0) {
             UiUtils.submitUiMachineTask(() -> {
                 Feeder feeder = getSelectedFeeder();
-                Camera camera = MainFrame.machineControlsPanel.getSelectedTool().getHead()
+                Camera camera = MainFrame.get().getMachineControls().getSelectedTool().getHead()
                         .getDefaultCamera();
                 Location pickLocation = feeder.getPickLocation();
-                MovableUtils.moveToLocationAtSafeZ(camera, pickLocation, 1.0);
+                MovableUtils.moveToLocationAtSafeZ(camera, pickLocation);
             });
         }
     };
@@ -425,11 +425,11 @@ public class FeedersPanel extends JPanel implements WizardContainer {
             new Thread() {
                 public void run() {
                     Feeder feeder = getSelectedFeeder();
-                    Nozzle nozzle = MainFrame.machineControlsPanel.getSelectedNozzle();
+                    Nozzle nozzle = MainFrame.get().getMachineControls().getSelectedNozzle();
 
                     try {
                         Location pickLocation = feeder.getPickLocation();
-                        MovableUtils.moveToLocationAtSafeZ(nozzle, pickLocation, 1.0);
+                        MovableUtils.moveToLocationAtSafeZ(nozzle, pickLocation);
                     }
                     catch (Exception e) {
                         MessageBoxes.errorBox(FeedersPanel.this, "Movement Error", e);

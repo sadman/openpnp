@@ -299,7 +299,7 @@ public class CamerasPanel extends JPanel implements WizardContainer {
 
                 configuration.getMachine().addCamera(camera);
 
-                MainFrame.cameraPanel.addCamera(camera);
+                MainFrame.get().getCameraViews().addCamera(camera);
                 tableModel.refresh();
                 Helpers.selectLastTableRow(table);
             }
@@ -331,7 +331,7 @@ public class CamerasPanel extends JPanel implements WizardContainer {
                     configuration.getMachine().removeCamera(camera);
                 }
                 tableModel.refresh();
-                MessageBoxes.errorBox(getTopLevelAncestor(), "Restart Required", camera.getName()
+                MessageBoxes.infoBox("Restart Required", camera.getName()
                         + " has been removed. Please restart OpenPnP for the changes to take effect.");
             }
         }

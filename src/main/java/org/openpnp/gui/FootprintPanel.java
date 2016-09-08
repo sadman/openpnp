@@ -65,6 +65,7 @@ import com.jgoodies.forms.layout.ColumnSpec;
 import com.jgoodies.forms.layout.FormLayout;
 import com.jgoodies.forms.layout.FormSpecs;
 import com.jgoodies.forms.layout.RowSpec;
+import java.awt.Dimension;
 
 @SuppressWarnings("serial")
 public class FootprintPanel extends JPanel {
@@ -150,6 +151,7 @@ public class FootprintPanel extends JPanel {
 
 
         JScrollPane tableScrollPane = new JScrollPane(table);
+        tableScrollPane.setPreferredSize(new Dimension(454, 100));
         tablePanel.add(tableScrollPane);
 
         showReticle();
@@ -190,7 +192,7 @@ public class FootprintPanel extends JPanel {
     private void showReticle() {
         try {
             Camera camera = Configuration.get().getMachine().getDefaultHead().getDefaultCamera();
-            CameraView cameraView = MainFrame.cameraPanel.getCameraView(camera);
+            CameraView cameraView = MainFrame.get().getCameraViews().getCameraView(camera);
             if (cameraView == null) {
                 return;
             }
