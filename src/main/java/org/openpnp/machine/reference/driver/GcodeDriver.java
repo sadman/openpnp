@@ -32,26 +32,24 @@ import org.openpnp.spi.HeadMountable;
 import org.openpnp.spi.Nozzle;
 import org.openpnp.spi.PropertySheetHolder;
 import org.openpnp.spi.base.SimplePropertySheetHolder;
+import org.pmw.tinylog.Logger;
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.Element;
 import org.simpleframework.xml.ElementList;
 import org.simpleframework.xml.Root;
 import org.simpleframework.xml.core.Commit;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Joiner;
 
 @Root
 public class GcodeDriver extends AbstractSerialPortDriver implements Runnable {
-    private static final Logger logger = LoggerFactory.getLogger(GcodeDriver.class);
-
     public enum CommandType {
         COMMAND_CONFIRM_REGEX,
         POSITION_REPORT_REGEX,
         CONNECT_COMMAND,
         ENABLE_COMMAND,
         DISABLE_COMMAND,
+        POST_VISION_HOME_COMMAND,
         HOME_COMMAND("Id", "Name"),
         PUMP_ON_COMMAND,
         PUMP_OFF_COMMAND,
@@ -81,7 +79,7 @@ public class GcodeDriver extends AbstractSerialPortDriver implements Runnable {
             this.headMountable = headMountable;
             this.variableNames = variableNames;
         }
-        
+
         public boolean isHeadMountable() {
             return headMountable;
         }
@@ -94,7 +92,7 @@ public class GcodeDriver extends AbstractSerialPortDriver implements Runnable {
         @Attribute(required = true)
         public CommandType type;
 
-        @ElementList(required = false, inline = true, entry = "text", data=true)
+        @ElementList(required = false, inline = true, entry = "text", data = true)
         public ArrayList<String> commands = new ArrayList<>();
 
         public Command(String headMountableId, CommandType type, String text) {
@@ -102,7 +100,7 @@ public class GcodeDriver extends AbstractSerialPortDriver implements Runnable {
             this.type = type;
             setCommand(text);
         }
-        
+
         public void setCommand(String text) {
             this.commands.clear();
             if (text != null) {
@@ -366,10 +364,25 @@ public class GcodeDriver extends AbstractSerialPortDriver implements Runnable {
                     .getHomeFiducialLocation(tmp, homePart);
 
             // homeOffset contains the offset, but we are not really concerned with that,
-            // we just reset everything back to 0 at this point.
+            // we just reset X,Y back to the home-coordinate at this point.
+            double xHomeCoordinate = 0;
+            double yHomeCoordinate = 0;
             for (Axis axis : axes) {
-                axis.setCoordinate(axis.getHomeCoordinate());
+                if (axis.getType() == Axis.Type.X) {
+                    axis.setCoordinate(axis.getHomeCoordinate());
+                    xHomeCoordinate = axis.getHomeCoordinate();
+                }
+                if (axis.getType() == Axis.Type.Y) {
+                    axis.setCoordinate(axis.getHomeCoordinate());
+                    yHomeCoordinate = axis.getHomeCoordinate();
+                }
             }
+
+            String g92command = getCommand(null, CommandType.POST_VISION_HOME_COMMAND);
+            g92command = substituteVariable(g92command, "X", xHomeCoordinate);
+            g92command = substituteVariable(g92command, "Y", yHomeCoordinate);
+            sendGcode(g92command, -1);
+
         }
     }
 
@@ -382,7 +395,7 @@ public class GcodeDriver extends AbstractSerialPortDriver implements Runnable {
         }
         return null;
     }
-    
+
     public Command getCommand(HeadMountable hm, CommandType type, boolean checkDefaults) {
         // If a HeadMountable is specified, see if we can find a match
         // for both the HeadMountable ID and the command type.
@@ -414,7 +427,7 @@ public class GcodeDriver extends AbstractSerialPortDriver implements Runnable {
         }
         return c.getCommand();
     }
-    
+
     public void setCommand(HeadMountable hm, CommandType type, String text) {
         Command c = getCommand(hm, type, false);
         if (text == null || text.trim().length() == 0) {
@@ -684,14 +697,14 @@ public class GcodeDriver extends AbstractSerialPortDriver implements Runnable {
             }
         }
         catch (Exception e) {
-            logger.error("disconnect()", e);
+            Logger.error("disconnect()", e);
         }
 
         try {
             super.disconnect();
         }
         catch (Exception e) {
-            logger.error("disconnect()", e);
+            Logger.error("disconnect()", e);
         }
         disconnectRequested = false;
     }
@@ -735,11 +748,11 @@ public class GcodeDriver extends AbstractSerialPortDriver implements Runnable {
         // for a response to a command we actually wait for the one we expect.
         responseQueue.drainTo(responses);
 
-        logger.debug("sendCommand({}, {})...", command, timeout);
+        Logger.debug("sendCommand({}, {})...", command, timeout);
 
         // Send the command, if one was specified
         if (command != null) {
-            logger.trace("[{}] >> {}", portName, command);
+            Logger.trace("[{}] >> {}", portName, command);
             output.write(command.getBytes());
             output.write("\n".getBytes());
         }
@@ -777,7 +790,7 @@ public class GcodeDriver extends AbstractSerialPortDriver implements Runnable {
         // Read any additional responses that came in after the initial one.
         responseQueue.drainTo(responses);
 
-        logger.debug("sendCommand({}, {}) => {}",
+        Logger.debug("sendCommand({}, {}) => {}",
                 new Object[] {command, timeout == Long.MAX_VALUE ? -1 : timeout, responses});
         return responses;
     }
@@ -792,11 +805,11 @@ public class GcodeDriver extends AbstractSerialPortDriver implements Runnable {
                 continue;
             }
             catch (IOException e) {
-                logger.error("Read error", e);
+                Logger.error("Read error", e);
                 return;
             }
             line = line.trim();
-            logger.trace("[{}] << {}", portName, line);
+            Logger.trace("[{}] << {}", portName, line);
             if (!processPositionReport(line)) {
                 responseQueue.offer(line);
             }
@@ -812,7 +825,7 @@ public class GcodeDriver extends AbstractSerialPortDriver implements Runnable {
             return false;
         }
 
-        logger.trace("Position report: {}", line);
+        Logger.trace("Position report: {}", line);
         Matcher matcher =
                 Pattern.compile(getCommand(null, CommandType.POSITION_REPORT_REGEX)).matcher(line);
         matcher.matches();
@@ -823,7 +836,7 @@ public class GcodeDriver extends AbstractSerialPortDriver implements Runnable {
                 axis.setCoordinate(d);
             }
             catch (Exception e) {
-                logger.warn("Error processing position report for axis {}: {}", axis.getName(), e);
+                Logger.warn("Error processing position report for axis {}: {}", axis.getName(), e);
             }
         }
 
@@ -1032,6 +1045,40 @@ public class GcodeDriver extends AbstractSerialPortDriver implements Runnable {
             // Since we're just negating the value of the coordinate we can just
             // use the same function.
             return toTransformed(axis, hm, transformedCoordinate);
+        }
+    }
+
+    public static class CamTransform implements AxisTransform {
+        @Element
+        private String negatedHeadMountableId;
+
+        @Attribute(required = false)
+        private double camRadius = 24;
+
+        @Attribute(required = false)
+        private double camWheelRadius = 9.5;
+
+        @Attribute(required = false)
+        private double camWheelGap = 2;
+
+        @Override
+        public double toTransformed(Axis axis, HeadMountable hm, double rawCoordinate) {
+            double transformed = Math.sin(Math.toRadians(rawCoordinate)) * camRadius;
+            if (hm.getId().equals(negatedHeadMountableId)) {
+                transformed = -transformed;
+            }
+            transformed += camWheelRadius + camWheelGap;
+            return transformed;
+        }
+
+        @Override
+        public double toRaw(Axis axis, HeadMountable hm, double transformedCoordinate) {
+            double raw = Math.toDegrees(
+                    Math.asin((transformedCoordinate - camWheelRadius - camWheelGap) / camRadius));
+            if (hm.getId().equals(negatedHeadMountableId)) {
+                raw = -raw;
+            }
+            return raw;
         }
     }
 }
