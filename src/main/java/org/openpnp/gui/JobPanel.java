@@ -355,6 +355,7 @@ public class JobPanel extends JPanel {
         }
         this.job = job;
         boardLocationsTableModel.setJob(job);
+        jobPlacementsPanel.setJob(job);
         job.addPropertyChangeListener("dirty", titlePropertyChangeListener);
         job.addPropertyChangeListener("file", titlePropertyChangeListener);
         updateTitle();

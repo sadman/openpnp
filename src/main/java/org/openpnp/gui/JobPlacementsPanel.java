@@ -45,6 +45,8 @@ import org.openpnp.model.Board;
 import org.openpnp.model.Board.Side;
 import org.openpnp.model.BoardLocation;
 import org.openpnp.model.Configuration;
+import org.openpnp.model.Job;
+import org.openpnp.model.JobPlacement;
 import org.openpnp.model.Location;
 import org.openpnp.model.Part;
 import org.openpnp.model.Placement;
@@ -64,6 +66,7 @@ public class JobPlacementsPanel extends JPanel {
     private ActionGroup multiSelectionActionGroup;
     private ActionGroup captureAndPositionActionGroup;
     private BoardLocation boardLocation;
+    private Job job;
 
     private static Color typeColorIgnore = new Color(252, 255, 157);
     private static Color typeColorFiducial = new Color(157, 188, 255);
@@ -159,8 +162,8 @@ public class JobPlacementsPanel extends JPanel {
                     multiSelectionActionGroup.setEnabled(false);
                     singleSelectionActionGroup.setEnabled(getSelection() != null);
                     captureAndPositionActionGroup.setEnabled(getSelection() != null
-                            && getSelection().getSide() == boardLocation.getSide());
-                    Configuration.get().getBus().post(new PlacementSelectedEvent(getSelection(), boardLocation));
+                            && getSelection().getPlacement().getSide() == boardLocation.getSide());
+                    Configuration.get().getBus().post(new PlacementSelectedEvent(getSelection().getPlacement(), boardLocation));
                 }
             }
         });
@@ -184,8 +187,8 @@ public class JobPlacementsPanel extends JPanel {
             @Override
             public void keyTyped(KeyEvent e) {
                 if (e.getKeyChar() == ' ') {
-                    Placement placement = getSelection();
-                    placement.setType(placement.getType() == Type.Place ? Type.Ignore : Type.Place);
+                    JobPlacement jobPlacement = getSelection();
+                    jobPlacement.getPlacement().setType(jobPlacement.getPlacement().getType() == Type.Place ? Type.Ignore : Type.Place);
                     tableModel.fireTableRowsUpdated(table.getSelectedRow(), table.getSelectedRow());
                 }
                 else {
@@ -214,9 +217,14 @@ public class JobPlacementsPanel extends JPanel {
         add(scrollPane, BorderLayout.CENTER);
     }
     
+    public void setJob(Job job) {
+        this.job = job;
+        tableModel.setJob(job);
+    }
+    
     public void selectPlacement(Placement placement) {
         for (int i = 0; i < tableModel.getRowCount(); i++) {
-            if (tableModel.getPlacement(i) == placement) {
+            if (tableModel.getJobPlacement(i).getPlacement() == placement) {
                 int index = table.convertRowIndexToView(i);
                 table.getSelectionModel().setSelectionInterval(index, index);
                 table.scrollRectToVisible(new Rectangle(table.getCellRect(index, 0, true)));
@@ -224,38 +232,38 @@ public class JobPlacementsPanel extends JPanel {
             }
         }
     }
-    
+
     public void setBoardLocation(BoardLocation boardLocation) {
         this.boardLocation = boardLocation;
         if (boardLocation == null) {
-            tableModel.setBoard(null);
+            tableModel.setBoardLocation(null);
             boardLocationSelectionActionGroup.setEnabled(false);
         }
         else {
-            tableModel.setBoard(boardLocation.getBoard());
+            tableModel.setBoardLocation(boardLocation);
             boardLocationSelectionActionGroup.setEnabled(true);
         }
     }
 
-    public Placement getSelection() {
-        List<Placement> selectedPlacements = getSelections();
-        if (selectedPlacements.isEmpty()) {
+    public JobPlacement getSelection() {
+        List<JobPlacement> selections = getSelections();
+        if (selections.isEmpty()) {
             return null;
         }
-        return selectedPlacements.get(0);
+        return selections.get(0);
     }
 
-    public List<Placement> getSelections() {
-        ArrayList<Placement> placements = new ArrayList<>();
+    public List<JobPlacement> getSelections() {
+        ArrayList<JobPlacement> selections = new ArrayList<>();
         if (boardLocation == null) {
-            return placements;
+            return selections;
         }
         int[] selectedRows = table.getSelectedRows();
         for (int selectedRow : selectedRows) {
             selectedRow = table.convertRowIndexToModel(selectedRow);
-            placements.add(boardLocation.getBoard().getPlacements().get(selectedRow));
+            selections.add(job.getJobPlacements().get(selectedRow));
         }
-        return placements;
+        return selections;
     }
 
     public final Action newAction = new AbstractAction() {
@@ -299,8 +307,8 @@ public class JobPlacementsPanel extends JPanel {
 
         @Override
         public void actionPerformed(ActionEvent arg0) {
-            for (Placement placement : getSelections()) {
-                boardLocation.getBoard().removePlacement(placement);
+            for (JobPlacement jobPlacement : getSelections()) {
+                boardLocation.getBoard().removePlacement(jobPlacement.getPlacement());
             }
             tableModel.fireTableDataChanged();
         }
@@ -317,7 +325,7 @@ public class JobPlacementsPanel extends JPanel {
         public void actionPerformed(ActionEvent arg0) {
             UiUtils.submitUiMachineTask(() -> {
                 Location location = Utils2D.calculateBoardPlacementLocation(boardLocation,
-                        getSelection().getLocation());
+                        getSelection().getPlacement().getLocation());
 
                 Camera camera = MainFrame.get().getMachineControls().getSelectedTool().getHead()
                         .getDefaultCamera();
@@ -336,7 +344,7 @@ public class JobPlacementsPanel extends JPanel {
         @Override
         public void actionPerformed(ActionEvent arg0) {
             Location location = Utils2D.calculateBoardPlacementLocation(boardLocation,
-                    getSelection().getLocation());
+                    getSelection().getPlacement().getLocation());
 
             Nozzle nozzle = MainFrame.get().getMachineControls().getSelectedNozzle();
             UiUtils.submitUiMachineTask(() -> {
@@ -360,7 +368,7 @@ public class JobPlacementsPanel extends JPanel {
                 Camera camera = tool.getHead().getDefaultCamera();
                 Location placementLocation = Utils2D.calculateBoardPlacementLocationInverse(
                         boardLocation, camera.getLocation());
-                getSelection().setLocation(placementLocation);
+                getSelection().getPlacement().setLocation(placementLocation);
                 table.repaint();
             });
         }
@@ -379,7 +387,7 @@ public class JobPlacementsPanel extends JPanel {
             Nozzle nozzle = MainFrame.get().getMachineControls().getSelectedNozzle();
             Location placementLocation = Utils2D
                     .calculateBoardPlacementLocationInverse(boardLocation, nozzle.getLocation());
-            getSelection().setLocation(placementLocation);
+            getSelection().getPlacement().setLocation(placementLocation);
             table.repaint();
         }
     };
@@ -393,7 +401,7 @@ public class JobPlacementsPanel extends JPanel {
 
         @Override
         public void actionPerformed(ActionEvent arg0) {
-            Placement placement = getSelection();
+            Placement placement = getSelection().getPlacement();
             MainFrame.get().getFeedersTab().showFeederForPart(placement.getPart());
         }
     };
@@ -419,8 +427,8 @@ public class JobPlacementsPanel extends JPanel {
 
         @Override
         public void actionPerformed(ActionEvent arg0) {
-            for (Placement placement : getSelections()) {
-                placement.setType(type);
+            for (JobPlacement jobPlacement : getSelections()) {
+                jobPlacement.getPlacement().setType(type);
             }
         }
     };
@@ -446,8 +454,8 @@ public class JobPlacementsPanel extends JPanel {
 
         @Override
         public void actionPerformed(ActionEvent arg0) {
-            for (Placement placement : getSelections()) {
-                placement.setSide(side);
+            for (JobPlacement jobPlacement : getSelections()) {
+                jobPlacement.getPlacement().setSide(side);
             }
         }
     };
