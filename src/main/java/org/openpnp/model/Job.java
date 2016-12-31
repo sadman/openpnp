@@ -37,6 +37,9 @@ import org.simpleframework.xml.core.Commit;
 public class Job extends AbstractModelObject implements PropertyChangeListener {
     @ElementList
     private ArrayList<BoardLocation> boardLocations = new ArrayList<>();
+    
+    @ElementList(required=false)
+    private ArrayList<JobPlacement> jobPlacements = new ArrayList<>();
 
     private transient File file;
     private transient boolean dirty;
@@ -97,5 +100,22 @@ public class Job extends AbstractModelObject implements PropertyChangeListener {
         if (evt.getSource() != Job.this || !evt.getPropertyName().equals("dirty")) {
             setDirty(true);
         }
+    }
+    
+    public List<JobPlacement> getJobPlacements() {
+        if (jobPlacements.isEmpty()) {
+            for (BoardLocation boardLocation : boardLocations) {
+                for (Placement placement : boardLocation.getBoard().getPlacements()) {
+                    jobPlacements.add(new JobPlacement(this, boardLocation, boardLocation.getBoard(), placement));
+                    setDirty(true);
+                }
+            }
+        }
+        return Collections.unmodifiableList(jobPlacements);
+    }
+    
+    void setOrdinal(JobPlacement jobPlacement, int ordinal) {
+        jobPlacements.remove(jobPlacement);
+        jobPlacements.add(ordinal, jobPlacement);
     }
 }
