@@ -104,7 +104,6 @@ public class PlacementsTableModel extends AbstractTableModel {
         if (job != null) {
             for (JobPlacement jobPlacement : job.getJobPlacements()) {
                 if (boardLocation == null || boardLocation == jobPlacement.getBoardLocation()) {
-                    System.out.println("add " + jobPlacement.getOrdinal());
                     jobPlacements.add(jobPlacement);
                 }
             }
