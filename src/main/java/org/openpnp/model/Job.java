@@ -37,6 +37,9 @@ import org.simpleframework.xml.core.Commit;
 public class Job extends AbstractModelObject implements PropertyChangeListener {
     @ElementList
     private ArrayList<BoardLocation> boardLocations = new ArrayList<>();
+    
+//    @ElementList(required=false)
+    private ArrayList<JobPlacement> jobPlacements = new ArrayList<>();
 
     private transient File file;
     private transient boolean dirty;
@@ -97,5 +100,36 @@ public class Job extends AbstractModelObject implements PropertyChangeListener {
         if (evt.getSource() != Job.this || !evt.getPropertyName().equals("dirty")) {
             setDirty(true);
         }
+    }
+    
+    public List<JobPlacement> getJobPlacements() {
+        // TODO: May need to optimize by adding change listeners and managing this list with events
+        // instead of constantly synchronizing.
+        
+        long t = System.currentTimeMillis();
+        // Create a master list of job placements for the job
+        ArrayList<JobPlacement> jobPlacements = new ArrayList<>();
+        for (BoardLocation boardLocation : boardLocations) {
+            for (Placement placement : boardLocation.getBoard().getPlacements()) {
+                jobPlacements.add(new JobPlacement(this, boardLocation, boardLocation.getBoard(), placement));
+            }
+        }
+        // Remove any objects in the current list that don't exist in the master list.
+        boolean dirty = this.jobPlacements.retainAll(jobPlacements);
+        // Remove any objects in the master list that already exist in the current list.
+        dirty |= jobPlacements.removeAll(this.jobPlacements);
+        // Add any objects in the master list that don't exist in the current list.
+        dirty |= this.jobPlacements.addAll(jobPlacements);
+        if (dirty) {
+            setDirty(true);
+        }
+        System.out.println("Synchronized job placements in " + (System.currentTimeMillis() - t));
+        
+        return Collections.unmodifiableList(this.jobPlacements);
+    }
+    
+    void setOrdinal(JobPlacement jobPlacement, int ordinal) {
+        jobPlacements.remove(jobPlacement);
+        jobPlacements.add(ordinal, jobPlacement);
     }
 }
