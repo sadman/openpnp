@@ -26,6 +26,8 @@ import java.awt.Desktop;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.KeyEventDispatcher;
+import java.awt.KeyboardFocusManager;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -360,6 +362,45 @@ public class MainFrame extends JFrame {
                 super.dispatchEvent(event);
             }
         });
+        
+        KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(new KeyEventDispatcher() {
+            StringBuffer buffer = new StringBuffer();
+            
+            @Override
+            public boolean dispatchKeyEvent(KeyEvent e) {
+                // TODO: Something is getting through and changing the combobox for the camera
+                // dropdown.
+                if (e.getID() == KeyEvent.KEY_PRESSED) {
+                    if (buffer == null && e.getKeyCode() == 66 && e.isControlDown()) {
+                        buffer = new StringBuffer();
+                        e.consume();
+                        return true;
+                    }
+                    if (buffer != null && e.getKeyCode() == 67 && e.isControlDown()) {
+                        Map<String, Object> globals = new HashMap<>();
+                        globals.put("barcode", buffer.toString());
+                        try {
+                            Configuration.get().getScripting().on("BarcodeScanned", globals);
+                        }
+                        catch (Exception e1) {
+                            Logger.warn(e1);
+                        }
+                        buffer = null;
+                        e.consume();
+                        return true;
+                    }
+                }
+                else if (e.getID() == KeyEvent.KEY_TYPED) {
+                    if (buffer != null) {
+                        buffer.append(e.getKeyChar());
+                        e.consume();
+                        return true;
+                    }
+                }
+                return false;
+            }
+        });
+        
         cameraPanel = new CameraPanel();
 
         panelCameraAndInstructions = new JPanel();
