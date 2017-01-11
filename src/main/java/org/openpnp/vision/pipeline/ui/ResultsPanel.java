@@ -32,6 +32,7 @@ public class ResultsPanel extends JPanel {
 
     private CvStage selectedStage;
     private Robot robot;
+    private Point measurePoint;
 
     public ResultsPanel(CvPipelineEditor editor) {
         this.editor = editor;
@@ -97,14 +98,23 @@ public class ResultsPanel extends JPanel {
 
         JLabel matStatusLabel = new JLabel("New label");
         panel_1.add(matStatusLabel, BorderLayout.SOUTH);
-        
+
+        matView.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                measurePoint = matView.scalePoint(e.getPoint());
+            }
+        });
         matView.addMouseMotionListener(new MouseAdapter() {
             @Override
             public void mouseMoved(MouseEvent e) {
                 Color color = robot.getPixelColor(e.getXOnScreen(), e.getYOnScreen());
                 float[] hsb = Color.RGBtoHSB(color.getRed(), color.getGreen(), color.getBlue(), null);
                 Point p = matView.scalePoint(e.getPoint());
-                matStatusLabel.setText(String.format("RGB: %03d, %03d, %03d HSB: %03d, %03d, %03d XY: %d, %d",
+                if (measurePoint == null) {
+                    measurePoint = p;
+                }
+                matStatusLabel.setText(String.format("RGB: %03d, %03d, %03d HSB: %03d, %03d, %03d XY: %d, %d Measure: %d, %d, %d",
                         color.getRed(),
                         color.getGreen(),
                         color.getBlue(),
@@ -112,7 +122,10 @@ public class ResultsPanel extends JPanel {
                         (int) (255.0 * hsb[1]),
                         (int) (255.0 * hsb[2]),
                         p.x,
-                        p.y));
+                        p.y,
+                        Math.abs(measurePoint.x - p.x),
+                        Math.abs(measurePoint.y - p.y),
+                        Math.abs(measurePoint.x - p.x) * Math.abs(measurePoint.y - p.y)));
             }
         });
 
