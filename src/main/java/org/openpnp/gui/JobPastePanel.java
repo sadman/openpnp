@@ -59,7 +59,7 @@ public class JobPastePanel extends JPanel {
     private static Color typeColorIgnore = new Color(252, 255, 157);
     private static Color typeColorPaste = new Color(157, 255, 168);
 
-    public JobPastePanel(JobPanel jobPanel) {
+    public JobPastePanel() {
         Configuration configuration = Configuration.get();
 
         boardLocationSelectionActionGroup = new ActionGroup(newAction);

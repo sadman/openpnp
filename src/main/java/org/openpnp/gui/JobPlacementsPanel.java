@@ -72,7 +72,7 @@ public class JobPlacementsPanel extends JPanel {
     private static Color statusColorReady = new Color(157, 255, 168);
     private static Color statusColorError = new Color(255, 157, 157);
 
-    public JobPlacementsPanel(JobPanel jobPanel) {
+    public JobPlacementsPanel() {
         Configuration configuration = Configuration.get();
 
         boardLocationSelectionActionGroup = new ActionGroup(newAction);

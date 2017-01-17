@@ -103,10 +103,6 @@ public class Job extends AbstractModelObject implements PropertyChangeListener {
     }
     
     public List<JobPlacement> getJobPlacements() {
-        // TODO: May need to optimize by adding change listeners and managing this list with events
-        // instead of constantly synchronizing.
-        
-        long t = System.currentTimeMillis();
         // Create a master list of job placements for the job
         ArrayList<JobPlacement> jobPlacements = new ArrayList<>();
         for (BoardLocation boardLocation : boardLocations) {
@@ -123,7 +119,6 @@ public class Job extends AbstractModelObject implements PropertyChangeListener {
         if (dirty) {
             setDirty(true);
         }
-        System.out.println("Synchronized job placements in " + (System.currentTimeMillis() - t));
         
         return Collections.unmodifiableList(this.jobPlacements);
     }

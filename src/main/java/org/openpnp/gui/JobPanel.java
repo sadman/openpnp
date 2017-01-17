@@ -268,8 +268,8 @@ public class JobPanel extends JPanel {
         tabbedPane = new JTabbedPane(JTabbedPane.TOP);
         pnlRight.add(tabbedPane, BorderLayout.CENTER);
 
-        jobPastePanel = new JobPastePanel(this);
-        jobPlacementsPanel = new JobPlacementsPanel(this);
+        jobPastePanel = new JobPastePanel();
+        jobPlacementsPanel = new JobPlacementsPanel();
 
         add(splitPane);
 
