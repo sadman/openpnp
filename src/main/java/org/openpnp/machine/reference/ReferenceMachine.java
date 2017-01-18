@@ -36,9 +36,9 @@ import org.openpnp.machine.reference.camera.SimulatedUpCamera;
 import org.openpnp.machine.reference.camera.Webcams;
 import org.openpnp.machine.reference.driver.NullDriver;
 import org.openpnp.machine.reference.feeder.ReferenceAutoFeeder;
-import org.openpnp.machine.reference.feeder.ReferenceSlotAutoFeeder;
 import org.openpnp.machine.reference.feeder.ReferenceDragFeeder;
 import org.openpnp.machine.reference.feeder.ReferenceLoosePartFeeder;
+import org.openpnp.machine.reference.feeder.ReferenceSlotAutoFeeder;
 import org.openpnp.machine.reference.feeder.ReferenceStripFeeder;
 import org.openpnp.machine.reference.feeder.ReferenceTrayFeeder;
 import org.openpnp.machine.reference.feeder.ReferenceTubeFeeder;
@@ -54,7 +54,6 @@ import org.openpnp.spi.FiducialLocator;
 import org.openpnp.spi.Head;
 import org.openpnp.spi.Nozzle;
 import org.openpnp.spi.PartAlignment;
-import org.openpnp.spi.PasteDispenseJobProcessor;
 import org.openpnp.spi.PnpJobProcessor;
 import org.openpnp.spi.PropertySheetHolder;
 import org.openpnp.spi.base.AbstractMachine;
@@ -63,19 +62,11 @@ import org.pmw.tinylog.Logger;
 import org.simpleframework.xml.Element;
 
 public class ReferenceMachine extends AbstractMachine {
-
-
     @Element(required = false)
     private ReferenceDriver driver = new NullDriver();
 
     @Element(required = false)
     protected PnpJobProcessor pnpJobProcessor = new ReferencePnpJobProcessor();
-
-    @Element(required = false)
-    protected PasteDispenseJobProcessor pasteDispenseJobProcessor;
-
-    @Element(required = false)
-    protected PasteDispenseJobProcessor glueDispenseJobProcessor;
 
     @Element(required = false)
     protected PartAlignment partAlignment = new ReferenceBottomVision();
@@ -263,15 +254,4 @@ public class ReferenceMachine extends AbstractMachine {
     public PnpJobProcessor getPnpJobProcessor() {
         return pnpJobProcessor;
     }
-
-    @Override
-    public PasteDispenseJobProcessor getPasteDispenseJobProcessor() {
-        return pasteDispenseJobProcessor;
-    }
-
-    @Override
-    public PasteDispenseJobProcessor getGlueDispenseJobProcessor() {
-        return glueDispenseJobProcessor;
-    }
-
 }

@@ -55,7 +55,6 @@ import org.openpnp.spi.Head;
 import org.openpnp.spi.HeadMountable;
 import org.openpnp.spi.Machine;
 import org.openpnp.spi.Nozzle;
-import org.openpnp.spi.PasteDispenser;
 import org.openpnp.util.BeanUtils;
 import org.openpnp.util.MovableUtils;
 import org.openpnp.util.UiUtils;
@@ -75,7 +74,6 @@ public class JogControlsPanel extends JPanel {
     private final MachineControlsPanel machineControlsPanel;
     private final Configuration configuration;
     private JPanel panelActuators;
-    private JPanel panelDispensers;
     private JSlider sliderIncrements;
 
     /**
@@ -107,9 +105,6 @@ public class JogControlsPanel extends JPanel {
         zParkAction.setEnabled(enabled);
         cParkAction.setEnabled(enabled);
         for (Component c : panelActuators.getComponents()) {
-            c.setEnabled(enabled);
-        }
-        for (Component c : panelDispensers.getComponents()) {
             c.setEnabled(enabled);
         }
     }
@@ -388,11 +383,6 @@ public class JogControlsPanel extends JPanel {
         panelActuators = new JPanel();
         tabbedPane_1.addTab("Actuators", null, panelActuators, null);
         panelActuators.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
-
-        panelDispensers = new JPanel();
-        tabbedPane_1.addTab("Dispense", null, panelDispensers, null);
-        FlowLayout flowLayout = (FlowLayout) panelDispensers.getLayout();
-        flowLayout.setAlignment(FlowLayout.LEFT);
     }
 
     private FocusTraversalPolicy focusPolicy = new FocusTraversalPolicy() {
@@ -597,17 +587,6 @@ public class JogControlsPanel extends JPanel {
             for (final Head head : machine.getHeads()) {
                 for (Actuator actuator : head.getActuators()) {
                     addActuator(actuator);
-                }
-                for (final PasteDispenser dispenser : head.getPasteDispensers()) {
-                    final JButton dispenserButton =
-                            new JButton(head.getName() + ":" + dispenser.getName());
-                    dispenserButton.setFocusable(false);
-                    dispenserButton.addActionListener((e) -> {
-                        UiUtils.submitUiMachineTask(() -> {
-                            dispenser.dispense(null, null, 250);
-                        });
-                    });
-                    panelDispensers.add(dispenserButton);
                 }
             }
 

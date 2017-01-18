@@ -12,9 +12,7 @@ import javax.swing.Icon;
 import org.openpnp.gui.support.PropertySheetWizardAdapter;
 import org.openpnp.gui.support.Wizard;
 import org.openpnp.machine.reference.ReferenceDriver;
-import org.openpnp.machine.reference.ReferencePasteDispenser;
 import org.openpnp.machine.reference.driver.wizards.AbstractSerialPortDriverConfigurationWizard;
-import org.openpnp.model.Location;
 import org.openpnp.spi.PropertySheetHolder;
 import org.simpleframework.xml.Attribute;
 
@@ -125,13 +123,6 @@ public abstract class AbstractSerialPortDriver implements ReferenceDriver, Close
             output = null;
             serialPort = null;
         }
-    }
-
-    @Override
-    public void dispense(ReferencePasteDispenser dispenser, Location startLocation,
-            Location endLocation, long dispenseTimeMilliseconds) throws Exception {
-        // Do nothing. This is just stubbed in so that it can be released
-        // without breaking every driver in the wild.
     }
 
     public String[] getPortNames() {

@@ -11,7 +11,6 @@ import org.openpnp.machine.reference.ReferenceDriver;
 import org.openpnp.machine.reference.ReferenceHead;
 import org.openpnp.machine.reference.ReferenceHeadMountable;
 import org.openpnp.machine.reference.ReferenceNozzle;
-import org.openpnp.machine.reference.ReferencePasteDispenser;
 import org.openpnp.model.LengthUnit;
 import org.openpnp.model.Location;
 import org.openpnp.spi.PropertySheetHolder;
@@ -102,10 +101,6 @@ public class TestDriver implements ReferenceDriver {
     }
 
     @Override
-    public void dispense(ReferencePasteDispenser dispenser, Location startLocation,
-            Location endLocation, long dispenseTimeMilliseconds) throws Exception {}
-
-    @Override
     public void setEnabled(boolean enabled) throws Exception {
         Logger.debug("setEnabled({})", enabled);
         delegate.setEnabled(enabled);
@@ -158,13 +153,6 @@ public class TestDriver implements ReferenceDriver {
 
         @Override
         public void actuate(ReferenceActuator actuator, double value) throws Exception {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void dispense(ReferencePasteDispenser dispenser, Location startLocation,
-                Location endLocation, long dispenseTimeMilliseconds) throws Exception {
             // TODO Auto-generated method stub
 
         }

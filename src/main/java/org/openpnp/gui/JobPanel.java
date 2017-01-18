@@ -125,7 +125,6 @@ public class JobPanel extends JPanel {
     private List<File> recentJobs = new ArrayList<>();
 
     private final JobPlacementsPanel jobPlacementsPanel;
-    private final JobPastePanel jobPastePanel;
 
     private JTabbedPane tabbedPane;
 
@@ -184,8 +183,8 @@ public class JobPanel extends JPanel {
                         BoardLocation boardLocation = getSelectedBoardLocation();
                         boardLocationSelectionActionGroup.setEnabled(boardLocation != null);
                         jobPlacementsPanel.setBoardLocation(boardLocation);
-                        jobPastePanel.setBoardLocation(boardLocation);
-                        Configuration.get().getBus().post(new BoardLocationSelectedEvent(boardLocation));
+                        Configuration.get().getBus()
+                                .post(new BoardLocationSelectedEvent(boardLocation));
                     }
                 });
 
@@ -268,7 +267,6 @@ public class JobPanel extends JPanel {
         tabbedPane = new JTabbedPane(JTabbedPane.TOP);
         pnlRight.add(tabbedPane, BorderLayout.CENTER);
 
-        jobPastePanel = new JobPastePanel(this);
         jobPlacementsPanel = new JobPlacementsPanel(this);
 
         add(splitPane);
@@ -287,11 +285,6 @@ public class JobPanel extends JPanel {
                     machine.getPnpJobProcessor().addTextStatusListener(textStatusListener);
                 }
 
-                if (machine.getPasteDispenseJobProcessor() != null) {
-                    tabbedPane.addTab("Solder Paste", null, jobPastePanel, null);
-                    machine.getPasteDispenseJobProcessor().addTextStatusListener(textStatusListener);
-                }
-
                 // Create an empty Job if one is not loaded
                 if (getJob() == null) {
                     setJob(new Job());
@@ -302,10 +295,10 @@ public class JobPanel extends JPanel {
         fsm.addPropertyChangeListener((e) -> {
             updateJobActions();
         });
-        
+
         Configuration.get().getBus().register(this);
     }
-    
+
     @Subscribe
     public void boardLocationSelected(BoardLocationSelectedEvent event) {
         SwingUtilities.invokeLater(() -> {
@@ -314,31 +307,32 @@ public class JobPanel extends JPanel {
             selectBoardLocation(event.boardLocation);
         });
     }
-    
+
     @Subscribe
     public void placementSelected(PlacementSelectedEvent event) {
         SwingUtilities.invokeLater(() -> {
             MainFrame.get().showTab("Job");
-            
+
             showTab("Pick and Place");
 
             selectBoardLocation(event.boardLocation);
-            
+
             jobPlacementsPanel.selectPlacement(event.placement);
         });
     }
-    
+
     private void selectBoardLocation(BoardLocation boardLocation) {
         for (int i = 0; i < boardLocationsTableModel.getRowCount(); i++) {
             if (boardLocationsTableModel.getBoardLocation(i) == boardLocation) {
                 int index = boardLocationsTable.convertRowIndexToView(i);
                 boardLocationsTable.getSelectionModel().setSelectionInterval(index, index);
-                boardLocationsTable.scrollRectToVisible(new Rectangle(boardLocationsTable.getCellRect(index, 0, true)));
+                boardLocationsTable.scrollRectToVisible(
+                        new Rectangle(boardLocationsTable.getCellRect(index, 0, true)));
                 break;
             }
         }
     }
-    
+
     private void showTab(String title) {
         int index = tabbedPane.indexOfTab(title);
         tabbedPane.setSelectedIndex(index);
@@ -409,7 +403,7 @@ public class JobPanel extends JPanel {
         }
         saveRecentJobs();
     }
-    
+
     public void refresh() {
         boardLocationsTableModel.fireTableDataChanged();
     }
@@ -626,7 +620,6 @@ public class JobPanel extends JPanel {
                     existingBoard.addSolderPastePad(pad);
                 }
                 jobPlacementsPanel.setBoardLocation(getSelectedBoardLocation());
-                jobPastePanel.setBoardLocation(getSelectedBoardLocation());
             }
         }
         catch (Exception e) {
@@ -696,20 +689,8 @@ public class JobPanel extends JPanel {
      */
     public void jobStart() throws Exception {
         String title = tabbedPane.getTitleAt(tabbedPane.getSelectedIndex());
-        if (title.equals("Solder Paste")) {
-            jobProcessor = Configuration.get().getMachine().getPasteDispenseJobProcessor();
-        }
-        else if (title.equals("Pick and Place"))
-        {
-            if((jobProcessor == null || jobProcessor == Configuration.get().getMachine().getPnpJobProcessor()) && (Configuration.get().getMachine().getGlueDispenseJobProcessor()!=null))
-            {
-               // Run the glue dispense processor first, this will deposit glue ready for any component placements
-                jobProcessor = Configuration.get().getMachine().getGlueDispenseJobProcessor();
-            }
-            else
-            {
-                jobProcessor = Configuration.get().getMachine().getPnpJobProcessor();
-            }
+        if (title.equals("Pick and Place")) {
+            jobProcessor = Configuration.get().getMachine().getPnpJobProcessor();
         }
         else {
             throw new Error("Programmer error: Unknown tab title.");
@@ -717,7 +698,7 @@ public class JobPanel extends JPanel {
         jobProcessor.initialize(job);
         jobRun();
     }
-    
+
     public void jobRun() {
         UiUtils.submitUiMachineTask(() -> {
             // Make sure the FSM has actually transitioned to either Running or Stepping
@@ -732,19 +713,15 @@ public class JobPanel extends JPanel {
                 }
             } while (fsm.getState() == State.Running);
 
-            // if this was the glue dispense run and we've finished, kick off the pick & place
-            if(Configuration.get().getMachine().getGlueDispenseJobProcessor()!=null && jobProcessor==Configuration.get().getMachine().getGlueDispenseJobProcessor()) {
-                fsm.send(Message.StartOrPause);
-            }
             return null;
         }, (e) -> {
-            
+
         }, (t) -> {
             List<String> options = new ArrayList<>();
             String retryOption = "Try Again";
             String skipOption = "Skip";
             String pauseOption = "Pause Job";
-            
+
             options.add(retryOption);
             if (jobProcessor.canSkip()) {
                 options.add(skipOption);
@@ -784,7 +761,7 @@ public class JobPanel extends JPanel {
             }
         });
     }
-    
+
     public void jobSkip() {
         UiUtils.submitUiMachineTask(() -> {
             jobProcessor.skip();
@@ -797,7 +774,7 @@ public class JobPanel extends JPanel {
             jobProcessor.abort();
         });
     }
-    
+
     public final Action startPauseResumeJobAction = new AbstractAction() {
         {
             putValue(SMALL_ICON, Icons.start);
@@ -1109,7 +1086,7 @@ public class JobPanel extends JPanel {
                     jobSaveActionGroup.setEnabled(getJob().isDirty());
                 }
             };
-            
+
     private final TextStatusListener textStatusListener = text -> {
         MainFrame.get().setStatus(text);
     };

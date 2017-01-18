@@ -36,7 +36,6 @@ import org.openpnp.machine.reference.ReferenceDriver;
 import org.openpnp.machine.reference.ReferenceHead;
 import org.openpnp.machine.reference.ReferenceHeadMountable;
 import org.openpnp.machine.reference.ReferenceNozzle;
-import org.openpnp.machine.reference.ReferencePasteDispenser;
 import org.openpnp.model.LengthUnit;
 import org.openpnp.model.Location;
 import org.openpnp.spi.Head;
@@ -190,10 +189,6 @@ public class SimulatorDriver implements ReferenceDriver {
             Thread.sleep(500);
         }
     }
-
-    @Override
-    public void dispense(ReferencePasteDispenser dispenser, Location startLocation,
-            Location endLocation, long dispenseTimeMilliseconds) throws Exception {}
 
     @Override
     public void setEnabled(boolean enabled) throws Exception {
