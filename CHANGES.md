@@ -1,6 +1,58 @@
 This file lists major or notable changes to OpenPnP in chronological order. This is not
 a complete change list, only those that may directly interest or affect users.
 
+# 2017-02-05
+
+* Actuator Improvements
+
+	* Actuators can now read String values in a generic fashion. This makes it possible to
+	integrate a variety of sensors into your system and use the output in any way you like,
+	particularly with scripting. The GcodeDriver has been updated to work with this new
+	functionality. For more information see:
+	
+		https://github.com/openpnp/openpnp/wiki/GcodeDriver#actuator_read_regex
+	
+		https://github.com/openpnp/openpnp/wiki/GcodeDriver:-Command-Reference#actuator_read_command
+
+	* The Actuators panel in Jog Controls now offers more options for controlling and testing
+	actuators. You can send true/false boolean values, send double values and read a response
+	from each actuator.
+
+# 2017-01-27
+
+* Icon Improvements
+
+	With many thanks to @dzach we now have some much improved icons in many parts of OpenPnP.
+	@dzach spent several days working on and refining icons to show their intent better, and
+	to improve usability to persons with color blindness. As a result, several of the icons
+	that used to require you to think for a moment to remember what they were are redesigned
+	to be very clear and easy to understand.
+	
+	References:
+	https://github.com/openpnp/openpnp/pull/429
+	https://github.com/openpnp/openpnp/pull/426
+	https://github.com/openpnp/openpnp/issues/421
+	
+	Thank you @dzach!
+	
+# 2017-01-15
+
+* ReferenceSlotAutoFeeder
+
+	A new feeder called ReferenceSlotAutoFeeder has been added which provides the capability
+	of a movable auto feeder.
+	
+	ReferenceSlotAutoFeeder allows you to define any number of feeder slots on your machine
+	and each one can contain a feeder. By changing the feeder in a slot you move it's settings
+	from slot to slot without having to reconfigure it's position, part or other settings.
+	
+	The primary purpose of this feeder is for machines that have auto feeders that can be readily
+	moved from position to position.
+	
+	More information at https://github.com/openpnp/openpnp/wiki/ReferenceSlotAutoFeeder.
+
+	Work was done in https://github.com/openpnp/openpnp/issues/399.
+
 # 2017-01-09
 
 * QR Code Based X Out Example Script
