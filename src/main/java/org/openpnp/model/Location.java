@@ -28,35 +28,42 @@ import org.simpleframework.xml.Attribute;
  * applied about the Z axis.
  */
 public class Location {
-    /*
-     * The fields on this class would be final in a perfect world, but that doesn't work correctly
-     * with the XML serialization.
-     */
+    @Attribute(required = true, name = "units")
+    private final LengthUnit units;
+    @Attribute(required = false, name = "x")
+    private final double x;
+    @Attribute(required = false, name = "y")
+    private final double y;
+    @Attribute(required = false, name = "z")
+    private final double z;
+    @Attribute(required = false, name = "rotation")
+    private final double rotation;
 
-    @Attribute
-    private LengthUnit units;
-    @Attribute(required = false)
-    private double x;
-    @Attribute(required = false)
-    private double y;
-    @Attribute(required = false)
-    private double z;
-    @Attribute(required = false)
-    private double rotation;
-
-    /**
-     * Only used by XML serialization.
-     */
-    @SuppressWarnings("unused")
-    private Location() {
-        this(null);
-    }
-
-    public Location(LengthUnit units) {
+    public Location(@Attribute(required = true, name = "units") LengthUnit units) {
         this(units, 0, 0, 0, 0);
     }
 
-    public Location(LengthUnit units, double x, double y, double z, double rotation) {
+    public Location(
+            @Attribute(required = true, name = "units") LengthUnit units, 
+            @Attribute(required = false, name = "x") double x, 
+            @Attribute(required = false, name = "y") double y, 
+            @Attribute(required = false, name = "z") double z, 
+            @Attribute(required = false, name = "rotation") double rotation) {
+        if (units == null) {
+            throw new Error("Invalid Location, units must not be null.");
+        }
+        if (Double.isNaN(x)) {
+            throw new Error("Invalid Location, x must not be NaN.");
+        }
+        if (Double.isNaN(y)) {
+            throw new Error("Invalid Location, y must not be NaN.");
+        }
+        if (Double.isNaN(z)) {
+            throw new Error("Invalid Location, z must not be NaN.");
+        }
+        if (Double.isNaN(rotation)) {
+            throw new Error("Invalid Location, rotation must not be NaN.");
+        }
         this.units = units;
         this.x = x;
         this.y = y;
