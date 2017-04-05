@@ -25,7 +25,9 @@ import java.awt.Component;
 import java.awt.FileDialog;
 import java.awt.Frame;
 import java.awt.Rectangle;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeEvent;
@@ -51,6 +53,7 @@ import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JToolBar;
+import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EtchedBorder;
@@ -350,6 +353,7 @@ public class JobPanel extends JPanel {
         add(splitPane);
 
         mnOpenRecent = new JMenu("Open Recent Job...");
+        mnOpenRecent.setMnemonic(KeyEvent.VK_R);
         loadRecentJobs();
 
         Configuration.get().addListener(new ConfigurationListener.Adapter() {
@@ -724,6 +728,12 @@ public class JobPanel extends JPanel {
     }
 
     public final Action openJobAction = new AbstractAction("Open Job...") {
+        {
+            putValue(MNEMONIC_KEY, KeyEvent.VK_O);
+            putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke('O',
+                    Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+        }
+
         @Override
         public void actionPerformed(ActionEvent arg0) {
             if (!checkForModifications()) {
@@ -754,6 +764,12 @@ public class JobPanel extends JPanel {
     };
 
     public final Action newJobAction = new AbstractAction("New Job") {
+        {
+            putValue(MNEMONIC_KEY, KeyEvent.VK_N);
+            putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke('N',
+                    Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+        }
+
         @Override
         public void actionPerformed(ActionEvent arg0) {
             if (!checkForModifications()) {
@@ -764,6 +780,12 @@ public class JobPanel extends JPanel {
     };
 
     public final Action saveJobAction = new AbstractAction("Save Job") {
+        {
+            putValue(MNEMONIC_KEY, KeyEvent.VK_S);
+            putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke('S',
+                    Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+        }
+
         @Override
         public void actionPerformed(ActionEvent arg0) {
             saveJob();
@@ -771,6 +793,10 @@ public class JobPanel extends JPanel {
     };
 
     public final Action saveJobAsAction = new AbstractAction("Save Job As...") {
+        {
+            putValue(MNEMONIC_KEY, KeyEvent.VK_A);
+        }
+
         @Override
         public void actionPerformed(ActionEvent arg0) {
             saveJobAs();
@@ -978,6 +1004,7 @@ public class JobPanel extends JPanel {
             putValue(NAME, "Add Board...");
             putValue(SMALL_ICON, Icons.add);
             putValue(SHORT_DESCRIPTION, "Add a new or existing board to the job.");
+            putValue(MNEMONIC_KEY, KeyEvent.VK_A);
         }
 
         @Override
@@ -988,6 +1015,7 @@ public class JobPanel extends JPanel {
         {
             putValue(NAME, "New Board...");
             putValue(SHORT_DESCRIPTION, "Create a new board and add it to the job.");
+            putValue(MNEMONIC_KEY, KeyEvent.VK_N);
         }
 
         @Override
@@ -1029,6 +1057,7 @@ public class JobPanel extends JPanel {
         {
             putValue(NAME, "Existing Board...");
             putValue(SHORT_DESCRIPTION, "Add an existing board to the job.");
+            putValue(MNEMONIC_KEY, KeyEvent.VK_E);
         }
 
         @Override
@@ -1068,6 +1097,7 @@ public class JobPanel extends JPanel {
             putValue(SMALL_ICON, Icons.delete);
             putValue(NAME, "Remove Board");
             putValue(SHORT_DESCRIPTION, "Remove the selected board from the job.");
+            putValue(MNEMONIC_KEY, KeyEvent.VK_R);
         }
 
         @Override
