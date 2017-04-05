@@ -43,6 +43,7 @@ import javax.swing.Action;
 import javax.swing.DefaultCellEditor;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JFileChooser;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
@@ -62,6 +63,8 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
+import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.openpnp.ConfigurationListener;
 import org.openpnp.events.BoardLocationSelectedEvent;
@@ -121,6 +124,7 @@ public class JobPanel extends JPanel {
     private static final String UNTITLED_JOB_FILENAME = "Untitled.job.xml";
 
     private static final String PREF_RECENT_FILES = "JobPanel.recentFiles";
+    private static final String PREF_LAST_DIRECTORY = "JobPanel.lastDirectory";
     private static final int PREF_RECENT_FILES_MAX = 10;
 
     private BoardLocationsTableModel boardLocationsTableModel;
@@ -131,6 +135,8 @@ public class JobPanel extends JPanel {
     private ActionGroup boardLocationSelectionActionGroup;
 
     private Preferences prefs = Preferences.userNodeForPackage(JobPanel.class);
+
+    private JFileChooser fileDialog = new JFileChooser(prefs.get(PREF_LAST_DIRECTORY, null));
 
     public JMenu mnOpenRecent;
 
@@ -600,23 +606,30 @@ public class JobPanel extends JPanel {
     }
 
     private boolean saveJobAs() {
-        FileDialog fileDialog = new FileDialog(frame, "Save Job As...", FileDialog.SAVE);
-        fileDialog.setFilenameFilter(new FilenameFilter() {
-            @Override
-            public boolean accept(File dir, String name) {
-                return name.toLowerCase().endsWith(".job.xml");
-            }
+    	fileDialog.setDialogTitle("Save Job As...");
+        fileDialog.setFileFilter(new FileFilter() {
+			@Override
+			public boolean accept(File f) {
+				return f.isDirectory() | f.getName().toLowerCase().endsWith("job.xml");
+			}
+
+			@Override
+			public String getDescription() {
+				return "Job files (.job.xml)";
+			}
         });
-        fileDialog.setVisible(true);
+        
+        if (fileDialog.showSaveDialog(frame) != JFileChooser.APPROVE_OPTION)
+        	return false;
+
+        prefs.put(PREF_LAST_DIRECTORY, fileDialog.getCurrentDirectory().getAbsolutePath());
+        
         try {
-            String filename = fileDialog.getFile();
-            if (filename == null) {
-                return false;
+            File file = fileDialog.getSelectedFile();
+
+            if (!file.getName().toLowerCase().endsWith(".job.xml")) {
+            	file = new File(file.getParent(), file.getName() + ".job.xml");
             }
-            if (!filename.toLowerCase().endsWith(".job.xml")) {
-                filename = filename + ".job.xml";
-            }
-            File file = new File(new File(fileDialog.getDirectory()), filename);
             if (file.exists()) {
                 int ret = JOptionPane.showConfirmDialog(getTopLevelAncestor(),
                         file.getName() + " already exists. Do you want to replace it?",
@@ -739,22 +752,28 @@ public class JobPanel extends JPanel {
             if (!checkForModifications()) {
                 return;
             }
-            FileDialog fileDialog = new FileDialog(frame);
-            fileDialog.setFilenameFilter(new FilenameFilter() {
-                @Override
-                public boolean accept(File dir, String name) {
-                    return name.toLowerCase().endsWith(".job.xml");
-                }
+        	fileDialog.setDialogTitle("Open Job...");
+            fileDialog.setFileFilter(new FileFilter() {
+				@Override
+				public boolean accept(File f) {
+					return f.isDirectory() | f.getName().toLowerCase().endsWith("job.xml");
+				}
+
+				@Override
+				public String getDescription() {
+					return "Job files (.job.xml)";
+				}
             });
-            fileDialog.setVisible(true);
+            
+            if (fileDialog.showOpenDialog(frame) != JFileChooser.APPROVE_OPTION)
+            	return;
+
+            prefs.put(PREF_LAST_DIRECTORY, fileDialog.getCurrentDirectory().getAbsolutePath());
+            
             try {
-                if (fileDialog.getFile() == null) {
-                    return;
-                }
-                File file = new File(new File(fileDialog.getDirectory()), fileDialog.getFile());
-                Job job = configuration.loadJob(file);
+                Job job = configuration.loadJob(fileDialog.getSelectedFile());
                 setJob(job);
-                addRecentJob(file);
+                addRecentJob(fileDialog.getSelectedFile());
             }
             catch (Exception e) {
                 e.printStackTrace();
@@ -1022,23 +1041,29 @@ public class JobPanel extends JPanel {
 
         @Override
         public void actionPerformed(ActionEvent arg0) {
-            FileDialog fileDialog = new FileDialog(frame, "Save New Board As...", FileDialog.SAVE);
-            fileDialog.setFilenameFilter(new FilenameFilter() {
-                @Override
-                public boolean accept(File dir, String name) {
-                    return name.toLowerCase().endsWith(".board.xml");
-                }
+        	fileDialog.setDialogTitle("Save New Board As...");
+            fileDialog.setFileFilter(new FileFilter() {
+    			@Override
+    			public boolean accept(File f) {
+    				return f.isDirectory() | f.getName().toLowerCase().endsWith("board.xml");
+    			}
+
+    			@Override
+    			public String getDescription() {
+    				return "Board files (.board.xml)";
+    			}
             });
-            fileDialog.setVisible(true);
+            
+            if (fileDialog.showSaveDialog(frame) != JFileChooser.APPROVE_OPTION)
+            	return;
+
+            prefs.put(PREF_LAST_DIRECTORY, fileDialog.getCurrentDirectory().getAbsolutePath());
+
             try {
-                String filename = fileDialog.getFile();
-                if (filename == null) {
-                    return;
+                File file = fileDialog.getSelectedFile();
+                if (!file.getName().toLowerCase().endsWith(".board.xml")) {
+                    file = new File(file.getParent(), file.getName() + ".board.xml");
                 }
-                if (!filename.toLowerCase().endsWith(".board.xml")) {
-                    filename = filename + ".board.xml";
-                }
-                File file = new File(new File(fileDialog.getDirectory()), filename);
 
                 Board board = configuration.getBoard(file);
                 BoardLocation boardLocation = new BoardLocation(board);
@@ -1064,21 +1089,26 @@ public class JobPanel extends JPanel {
 
         @Override
         public void actionPerformed(ActionEvent arg0) {
-            FileDialog fileDialog = new FileDialog(frame);
-            fileDialog.setFilenameFilter(new FilenameFilter() {
-                @Override
-                public boolean accept(File dir, String name) {
-                    return name.toLowerCase().endsWith(".board.xml");
-                }
-            });
-            fileDialog.setVisible(true);
-            try {
-                if (fileDialog.getFile() == null) {
-                    return;
-                }
-                File file = new File(new File(fileDialog.getDirectory()), fileDialog.getFile());
+        	fileDialog.setDialogTitle("Open Board...");
+            fileDialog.setFileFilter(new FileFilter() {
+				@Override
+				public boolean accept(File f) {
+					return f.isDirectory() | f.getName().toLowerCase().endsWith("board.xml");
+				}
 
-                Board board = configuration.getBoard(file);
+				@Override
+				public String getDescription() {
+					return "Board files (.board.xml)";
+				}
+            });
+            
+            if (fileDialog.showOpenDialog(frame) != JFileChooser.APPROVE_OPTION)
+            	return;
+
+            prefs.put(PREF_LAST_DIRECTORY, fileDialog.getCurrentDirectory().getAbsolutePath());
+            
+            try {
+                Board board = configuration.getBoard(fileDialog.getSelectedFile());
                 BoardLocation boardLocation = new BoardLocation(board);
                 getJob().addBoardLocation(boardLocation);
                 // TODO: Move to a list property listener.
