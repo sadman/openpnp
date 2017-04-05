@@ -136,6 +136,7 @@ public class JogControlsPanel extends JPanel {
         else {
             throw new Error("setUnits() not implemented for " + units);
         }
+        sliderIncrements.setValue(4);
         machineControlsPanel.updateDros();
     }
 
