@@ -774,6 +774,8 @@ public class JobPanel extends JPanel {
                 Job job = configuration.loadJob(fileDialog.getSelectedFile());
                 setJob(job);
                 addRecentJob(fileDialog.getSelectedFile());
+                if (boardLocationsTable.getRowCount() > 0)
+                	boardLocationsTable.setRowSelectionInterval(0,  0);
             }
             catch (Exception e) {
                 e.printStackTrace();
@@ -1374,6 +1376,8 @@ public class JobPanel extends JPanel {
                 Job job = configuration.loadJob(file);
                 setJob(job);
                 addRecentJob(file);
+                if (boardLocationsTable.getRowCount() > 0)
+                	boardLocationsTable.setRowSelectionInterval(0,  0);
             }
             catch (Exception e) {
                 e.printStackTrace();
