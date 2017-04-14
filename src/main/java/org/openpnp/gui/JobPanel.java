@@ -607,6 +607,7 @@ public class JobPanel extends JPanel {
 
     private boolean saveJobAs() {
     	fileDialog.setDialogTitle("Save Job As...");
+    	fileDialog.resetChoosableFileFilters();
         fileDialog.setFileFilter(new FileFilter() {
 			@Override
 			public boolean accept(File f) {
@@ -753,6 +754,7 @@ public class JobPanel extends JPanel {
                 return;
             }
         	fileDialog.setDialogTitle("Open Job...");
+        	fileDialog.resetChoosableFileFilters();
             fileDialog.setFileFilter(new FileFilter() {
 				@Override
 				public boolean accept(File f) {
@@ -1044,6 +1046,7 @@ public class JobPanel extends JPanel {
         @Override
         public void actionPerformed(ActionEvent arg0) {
         	fileDialog.setDialogTitle("Save New Board As...");
+        	fileDialog.resetChoosableFileFilters();
             fileDialog.setFileFilter(new FileFilter() {
     			@Override
     			public boolean accept(File f) {
@@ -1092,6 +1095,7 @@ public class JobPanel extends JPanel {
         @Override
         public void actionPerformed(ActionEvent arg0) {
         	fileDialog.setDialogTitle("Open Board...");
+        	fileDialog.resetChoosableFileFilters();
             fileDialog.setFileFilter(new FileFilter() {
 				@Override
 				public boolean accept(File f) {
