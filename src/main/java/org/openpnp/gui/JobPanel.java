@@ -620,8 +620,9 @@ public class JobPanel extends JPanel {
 			}
         });
         
-        if (fileDialog.showSaveDialog(frame) != JFileChooser.APPROVE_OPTION)
+        if (fileDialog.showSaveDialog(frame) != JFileChooser.APPROVE_OPTION) {
         	return false;
+        }
 
         prefs.put(PREF_LAST_DIRECTORY, fileDialog.getCurrentDirectory().getAbsolutePath());
         
@@ -767,8 +768,9 @@ public class JobPanel extends JPanel {
 				}
             });
             
-            if (fileDialog.showOpenDialog(frame) != JFileChooser.APPROVE_OPTION)
+            if (fileDialog.showOpenDialog(frame) != JFileChooser.APPROVE_OPTION) {
             	return;
+            }
 
             prefs.put(PREF_LAST_DIRECTORY, fileDialog.getCurrentDirectory().getAbsolutePath());
             
@@ -776,8 +778,9 @@ public class JobPanel extends JPanel {
                 Job job = configuration.loadJob(fileDialog.getSelectedFile());
                 setJob(job);
                 addRecentJob(fileDialog.getSelectedFile());
-                if (boardLocationsTable.getRowCount() > 0)
+                if (boardLocationsTable.getRowCount() > 0) {
                 	boardLocationsTable.setRowSelectionInterval(0,  0);
+		}
             }
             catch (Exception e) {
                 e.printStackTrace();
@@ -1059,8 +1062,9 @@ public class JobPanel extends JPanel {
     			}
             });
             
-            if (fileDialog.showSaveDialog(frame) != JFileChooser.APPROVE_OPTION)
+            if (fileDialog.showSaveDialog(frame) != JFileChooser.APPROVE_OPTION) {
             	return;
+            }
 
             prefs.put(PREF_LAST_DIRECTORY, fileDialog.getCurrentDirectory().getAbsolutePath());
 
@@ -1108,8 +1112,9 @@ public class JobPanel extends JPanel {
 				}
             });
             
-            if (fileDialog.showOpenDialog(frame) != JFileChooser.APPROVE_OPTION)
+            if (fileDialog.showOpenDialog(frame) != JFileChooser.APPROVE_OPTION) {
             	return;
+            }
 
             prefs.put(PREF_LAST_DIRECTORY, fileDialog.getCurrentDirectory().getAbsolutePath());
             
@@ -1382,8 +1387,9 @@ public class JobPanel extends JPanel {
                 Job job = configuration.loadJob(file);
                 setJob(job);
                 addRecentJob(file);
-                if (boardLocationsTable.getRowCount() > 0)
+                if (boardLocationsTable.getRowCount() > 0) {
                 	boardLocationsTable.setRowSelectionInterval(0,  0);
+		}
             }
             catch (Exception e) {
                 e.printStackTrace();
