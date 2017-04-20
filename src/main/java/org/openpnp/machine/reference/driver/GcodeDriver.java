@@ -452,18 +452,21 @@ public class GcodeDriver extends AbstractSerialPortDriver implements Runnable {
             command = substituteVariable(command, "FeedRate", maxFeedRate * speed);
             command = substituteVariable(command, "BacklashFeedRate", maxFeedRate * speed * backlashFeedRateFactor);
 
-            if (xAxis == null || xAxis.getCoordinate() == x) {
+            if (xAxis == null || (xAxis.getCoordinate() + nonSquarenessFactor * yAxis.getCoordinate()) == (x + nonSquarenessFactor * y)) {
                 command = substituteVariable(command, "X", null);
                 command = substituteVariable(command, "BacklashOffsetX", null); // Backlash Compensation
             }
             else {
                 command = substituteVariable(command, "X", x + nonSquarenessFactor * y);
+                String tmp = command;
                 command = substituteVariable(command, "BacklashOffsetX", x + backlashOffsetX + nonSquarenessFactor * y); // Backlash Compensation
+                if (!tmp.equals(command)) {
+                	x += backlashOffsetX; 
+                }
                 haveToMove = true;
                 if (xAxis.getPreMoveCommand() != null) {
                     sendGcode(xAxis.getPreMoveCommand());
                 }
-                xAxis.setCoordinate(x);
             }
 
             if (yAxis == null || yAxis.getCoordinate() == y) {
@@ -472,7 +475,11 @@ public class GcodeDriver extends AbstractSerialPortDriver implements Runnable {
             }
             else {
                 command = substituteVariable(command, "Y", y);
+                String tmp = command;
                 command = substituteVariable(command, "BacklashOffsetY", y + backlashOffsetY); // Backlash Compensation
+                if (!tmp.equals(command)) {
+                	y += backlashOffsetY; 
+                }
                 haveToMove = true;
                 if (yAxis.getPreMoveCommand() != null) {
                     sendGcode(yAxis.getPreMoveCommand());
