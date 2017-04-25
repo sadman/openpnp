@@ -135,11 +135,11 @@ public class ReferenceStripFeeder extends ReferenceFeeder {
     }
 
     public Length getHoleLineDistanceMax() {
-        return new Length(0.5, LengthUnit.Millimeters);
+        return new Length(0.1, LengthUnit.Millimeters);
     }
 
     public int getHoleBlurKernelSize() {
-        return 9;
+        return 47;
     }
 
     @Override
