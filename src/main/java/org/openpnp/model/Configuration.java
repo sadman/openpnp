@@ -434,6 +434,7 @@ public class Configuration extends AbstractModelObject {
         Job job = serializer.read(Job.class, file);
         job.setFile(file);
 
+        boards.clear();
         // Once the Job is loaded we need to resolve any Boards that it
         // references.
         for (BoardLocation boardLocation : job.getBoardLocations()) {
