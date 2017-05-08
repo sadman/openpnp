@@ -288,7 +288,7 @@ public class PackagesPanel extends JPanel {
                 for (Part part : Configuration.get().getParts()) {
                     if (part.getPackage() == pkg) {
                         MessageBoxes.errorBox(getTopLevelAncestor(), "Error",
-                                getSelection().getId() + " cannot be deleted. It is used by "
+                                pkg.getId() + " cannot be deleted. It is used by "
                                         + part.getId());
                         return;
                     }
