@@ -19,12 +19,15 @@
 
 package org.openpnp.model;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+
 import org.openpnp.model.Board.Side;
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.Element;
 import org.simpleframework.xml.core.Commit;
 
-public class BoardLocation extends AbstractModelObject {
+public class BoardLocation extends AbstractModelObject implements PropertyChangeListener {
     @Element
     private Location location;
     @Attribute
@@ -99,6 +102,9 @@ public class BoardLocation extends AbstractModelObject {
         Board oldValue = this.board;
         this.board = board;
         firePropertyChange("board", oldValue, board);
+        if (board != null) {
+            board.addPropertyChangeListener(this);
+        }
     }
 
     String getBoardFile() {
@@ -142,5 +148,9 @@ public class BoardLocation extends AbstractModelObject {
     @Override
     public String toString() {
         return String.format("board (%s), location (%s), side (%s)", boardFile, location, side);
+    }
+
+    public void propertyChange(PropertyChangeEvent evt) {
+        firePropertyChange(evt.getPropertyName(), evt.getOldValue(), evt.getNewValue());
     }
 }
