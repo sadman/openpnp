@@ -570,10 +570,6 @@ public class GcodeDriver extends AbstractSerialPortDriver implements Runnable {
                 command = substituteVariable(command, "Rotation", null);
             }
 
-            if (limitsEnabled && (x < limitsMinX || x > limitsMaxX || y < limitsMinY || y > limitsMaxY || z < limitsMinZ || z > limitsMaxZ)) {
-            	throw new Exception("Move to [" + x + ", " + y + ", "+ z + "] is outside of set limits.");
-            }
-            
             // Only give a command when move is necessary
             if (includeX || includeY || includeZ || includeRotation) {
 
