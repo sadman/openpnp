@@ -154,6 +154,27 @@ public class GcodeDriver extends AbstractSerialPortDriver implements Runnable {
     protected double nonSquarenessFactor = 0;
     
     @Attribute(required = false)
+    protected boolean limitsEnabled = false;
+    
+    @Attribute(required = false)
+    protected double limitsMinX = 0;
+    
+    @Attribute(required = false)
+    protected double limitsMaxX = 0;
+    
+    @Attribute(required = false)
+    protected double limitsMinY = 0;
+    
+    @Attribute(required = false)
+    protected double limitsMaxY = 0;
+    
+    @Attribute(required = false)
+    protected double limitsMinZ = 0;
+    
+    @Attribute(required = false)
+    protected double limitsMaxZ = 0;
+    
+    @Attribute(required = false)
     protected double backlashFeedRateFactor = 0.1;
 
     @Attribute(required = false)
@@ -549,6 +570,10 @@ public class GcodeDriver extends AbstractSerialPortDriver implements Runnable {
                 command = substituteVariable(command, "Rotation", null);
             }
 
+            if (limitsEnabled && (x < limitsMinX || x > limitsMaxX || y < limitsMinY || y > limitsMaxY || z < limitsMinZ || z > limitsMaxZ)) {
+            	throw new Exception("Move to [" + x + ", " + y + ", "+ z + "] is outside of set limits.");
+            }
+            
             // Only give a command when move is necessary
             if (includeX || includeY || includeZ || includeRotation) {
 
@@ -1035,6 +1060,62 @@ public class GcodeDriver extends AbstractSerialPortDriver implements Runnable {
     
     public double getNonSquarenessFactor() {
         return this.nonSquarenessFactor;
+    }
+    
+    public void setLimitsEnabled(boolean LimitsEnabled) {
+        this.limitsEnabled = LimitsEnabled;
+    }
+    
+    public boolean getLimitsEnabled() {
+        return this.limitsEnabled;
+    }
+    
+    public void setLimitsMinX(double LimitsMinX) {
+        this.limitsMinX = LimitsMinX;
+    }
+    
+    public double getLimitsMinX() {
+        return this.limitsMinX;
+    }
+    
+    public void setLimitsMaxX(double LimitsMaxX) {
+        this.limitsMaxX = LimitsMaxX;
+    }
+    
+    public double getLimitsMaxX() {
+        return this.limitsMaxX;
+    }
+    
+    public void setLimitsMinY(double LimitsMinY) {
+        this.limitsMinY = LimitsMinY;
+    }
+    
+    public double getLimitsMinY() {
+        return this.limitsMinY;
+    }
+    
+    public void setLimitsMaxY(double LimitsMaxY) {
+        this.limitsMaxY = LimitsMaxY;
+    }
+    
+    public double getLimitsMaxY() {
+        return this.limitsMaxY;
+    }
+    
+    public void setLimitsMinZ(double LimitsMinZ) {
+        this.limitsMinZ = LimitsMinZ;
+    }
+    
+    public double getLimitsMinZ() {
+        return this.limitsMinZ;
+    }
+    
+    public void setLimitsMaxZ(double LimitsMaxZ) {
+        this.limitsMaxZ = LimitsMaxZ;
+    }
+    
+    public double getLimitsMaxZ() {
+        return this.limitsMaxZ;
     }
     
     public int getMaxFeedRate() {
