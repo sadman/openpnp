@@ -15,6 +15,7 @@ import java.io.StringWriter;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -63,6 +64,16 @@ public class GcodeDriverSettings extends AbstractConfigurationWizard {
                 FormSpecs.RELATED_GAP_COLSPEC,
                 FormSpecs.DEFAULT_COLSPEC,},
             new RowSpec[] {
+                FormSpecs.RELATED_GAP_ROWSPEC,
+                FormSpecs.DEFAULT_ROWSPEC,
+                FormSpecs.RELATED_GAP_ROWSPEC,
+                FormSpecs.DEFAULT_ROWSPEC,
+                FormSpecs.RELATED_GAP_ROWSPEC,
+                FormSpecs.DEFAULT_ROWSPEC,
+                FormSpecs.RELATED_GAP_ROWSPEC,
+                FormSpecs.DEFAULT_ROWSPEC,
+                FormSpecs.RELATED_GAP_ROWSPEC,
+                FormSpecs.DEFAULT_ROWSPEC,
                 FormSpecs.RELATED_GAP_ROWSPEC,
                 FormSpecs.DEFAULT_ROWSPEC,
                 FormSpecs.RELATED_GAP_ROWSPEC,
@@ -128,6 +139,54 @@ public class GcodeDriverSettings extends AbstractConfigurationWizard {
         nonSquarenessFactorTf = new JTextField();
         settingsPanel.add(nonSquarenessFactorTf, "4, 10, fill, default");
         nonSquarenessFactorTf.setColumns(5);
+
+        JLabel lblLimitsEnabled = new JLabel("Enable limits");
+        settingsPanel.add(lblLimitsEnabled, "2, 14, right, default");
+
+        limitsEnabledCb = new JCheckBox("");
+        settingsPanel.add(limitsEnabledCb, "4, 14");
+
+        JLabel lblMinX = new JLabel("Min X");
+        settingsPanel.add(lblMinX, "2, 16, right, default");
+
+        limitsMinXTf = new JTextField();
+        settingsPanel.add(limitsMinXTf, "4, 16, fill, default");
+        limitsMinXTf.setColumns(5);
+
+        JLabel lblMaxX = new JLabel("Max X");
+        settingsPanel.add(lblMaxX, "6, 16, right, default");
+
+        limitsMaxXTf = new JTextField();
+        settingsPanel.add(limitsMaxXTf, "8, 16, fill, default");
+        limitsMaxXTf.setColumns(5);
+
+        JLabel lblMinY = new JLabel("Min Y");
+        settingsPanel.add(lblMinY, "2, 18, right, default");
+
+        limitsMinYTf = new JTextField();
+        settingsPanel.add(limitsMinYTf, "4, 18, fill, default");
+        limitsMinYTf.setColumns(5);
+
+        JLabel lblMaxY = new JLabel("Max Y");
+        settingsPanel.add(lblMaxY, "6, 18, right, default");
+
+        limitsMaxYTf = new JTextField();
+        settingsPanel.add(limitsMaxYTf, "8, 18, fill, default");
+        limitsMaxYTf.setColumns(5);
+
+        JLabel lblMinZ = new JLabel("Min Z");
+        settingsPanel.add(lblMinZ, "2, 20, right, default");
+
+        limitsMinZTf = new JTextField();
+        settingsPanel.add(limitsMinZTf, "4, 20, fill, default");
+        limitsMinZTf.setColumns(5);
+
+        JLabel lblMaxZ = new JLabel("Max Z");
+        settingsPanel.add(lblMaxZ, "6, 20, right, default");
+
+        limitsMaxZTf = new JTextField();
+        settingsPanel.add(limitsMaxZTf, "8, 20, fill, default");
+        limitsMaxZTf.setColumns(5);
     }
 
     @Override
@@ -145,6 +204,13 @@ public class GcodeDriverSettings extends AbstractConfigurationWizard {
         addWrappedBinding(driver, "backlashFeedRateFactor", backlashFeedRateFactorTf, "text", doubleConverter);
         addWrappedBinding(driver, "timeoutMilliseconds", commandTimeoutTf, "text", intConverter);
         addWrappedBinding(driver, "connectWaitTimeMilliseconds", connectWaitTimeTf, "text", intConverter);
+        addWrappedBinding(driver, "limitsEnabled", limitsEnabledCb, "selected");
+        addWrappedBinding(driver, "limitsMinX", limitsMinXTf, "text", doubleConverter);
+        addWrappedBinding(driver, "limitsMaxX", limitsMaxXTf, "text", doubleConverter);
+        addWrappedBinding(driver, "limitsMinY", limitsMinYTf, "text", doubleConverter);
+        addWrappedBinding(driver, "limitsMaxY", limitsMaxYTf, "text", doubleConverter);
+        addWrappedBinding(driver, "limitsMinZ", limitsMinZTf, "text", doubleConverter);
+        addWrappedBinding(driver, "limitsMaxZ", limitsMaxZTf, "text", doubleConverter);
         
         ComponentDecorators.decorateWithAutoSelect(maxFeedRateTf);
         ComponentDecorators.decorateWithAutoSelect(backlashOffsetXTf);
@@ -153,6 +219,12 @@ public class GcodeDriverSettings extends AbstractConfigurationWizard {
         ComponentDecorators.decorateWithAutoSelect(backlashFeedRateFactorTf);
         ComponentDecorators.decorateWithAutoSelect(commandTimeoutTf);
         ComponentDecorators.decorateWithAutoSelect(connectWaitTimeTf);
+        ComponentDecorators.decorateWithAutoSelect(limitsMinXTf);
+        ComponentDecorators.decorateWithAutoSelect(limitsMaxXTf);
+        ComponentDecorators.decorateWithAutoSelect(limitsMinYTf);
+        ComponentDecorators.decorateWithAutoSelect(limitsMaxYTf);
+        ComponentDecorators.decorateWithAutoSelect(limitsMinZTf);
+        ComponentDecorators.decorateWithAutoSelect(limitsMaxZTf);
     }
 
     public final Action exportProfileAction = new AbstractAction() {
@@ -288,6 +360,13 @@ public class GcodeDriverSettings extends AbstractConfigurationWizard {
     private JTextField nonSquarenessFactorTf;
     private JTextField commandTimeoutTf;
     private JTextField connectWaitTimeTf;
+    private JTextField limitsMinXTf;
+    private JTextField limitsMaxXTf;
+    private JTextField limitsMinYTf;
+    private JTextField limitsMaxYTf;
+    private JTextField limitsMinZTf;
+    private JTextField limitsMaxZTf;
+    private JCheckBox limitsEnabledCb;
     private JComboBox unitsCb;
 
     static class HeadMountableItem {
