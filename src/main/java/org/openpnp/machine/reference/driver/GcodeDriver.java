@@ -492,6 +492,10 @@ public class GcodeDriver extends AbstractSerialPortDriver implements Runnable {
                 rotation = rotationAxis.getTransform().toRaw(rotationAxis, hm, rotation);
             }
 
+            if (limitsEnabled && (x < limitsMinX || x > limitsMaxX || y < limitsMinY || y > limitsMaxY || z < limitsMinZ || z > limitsMaxZ)) {
+            	throw new Exception("Move to [" + x + ", " + y + ", "+ z + "] is outside of set limits.");
+            }
+
             String command = getCommand(hm, CommandType.MOVE_TO_COMMAND);
             command = substituteVariable(command, "Id", hm.getId());
             command = substituteVariable(command, "Name", hm.getName());
