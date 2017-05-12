@@ -121,6 +121,7 @@ public class ReferenceStripFeederConfigurationWizard extends AbstractConfigurati
                         FormSpecs.RELATED_GAP_COLSPEC, FormSpecs.DEFAULT_COLSPEC,},
                 new RowSpec[] {FormSpecs.RELATED_GAP_ROWSPEC, FormSpecs.DEFAULT_ROWSPEC,
                         FormSpecs.RELATED_GAP_ROWSPEC, FormSpecs.DEFAULT_ROWSPEC,
+                        FormSpecs.RELATED_GAP_ROWSPEC, FormSpecs.DEFAULT_ROWSPEC,
                         FormSpecs.RELATED_GAP_ROWSPEC, FormSpecs.DEFAULT_ROWSPEC,}));
         try {
         }
@@ -152,6 +153,12 @@ public class ReferenceStripFeederConfigurationWizard extends AbstractConfigurati
         panelPart.add(retryCountTf, "4, 6, fill, default");
         retryCountTf.setColumns(3);
 
+        lblFeedAfterPick = new JLabel("Feed after pick?");
+        panelPart.add(lblFeedAfterPick, "2, 8");
+
+        chckbxFeedAfterPick = new JCheckBox("");
+        panelPart.add(chckbxFeedAfterPick, "4, 8");
+        
         panelTapeSettings = new JPanel();
         contentPanel.add(panelTapeSettings);
         panelTapeSettings.setBorder(new TitledBorder(
@@ -316,6 +323,7 @@ public class ReferenceStripFeederConfigurationWizard extends AbstractConfigurati
         addWrappedBinding(feedEndLocation, "lengthZ", textFieldFeedEndZ, "text", lengthConverter);
 
         addWrappedBinding(feeder, "visionEnabled", chckbxUseVision, "selected");
+        addWrappedBinding(feeder, "feedAfterPick", chckbxFeedAfterPick, "selected");
 
         ComponentDecorators.decorateWithAutoSelect(textFieldLocationRotation);
         ComponentDecorators.decorateWithAutoSelectAndLengthConversion(textFieldTapeWidth);
@@ -571,7 +579,9 @@ public class ReferenceStripFeederConfigurationWizard extends AbstractConfigurati
     }
 
     private JCheckBox chckbxUseVision;
+    private JCheckBox chckbxFeedAfterPick;
     private JLabel lblUseVision;
+    private JLabel lblFeedAfterPick;
     private JLabel lblPart;
     private JLabel lblRetryCount;
     private JTextField retryCountTf;

@@ -102,6 +102,9 @@ public class ReferenceStripFeeder extends ReferenceFeeder {
     @Attribute(required = false)
     private boolean visionEnabled = true;
 
+    @Attribute(required = false)
+    private boolean feedAfterPick = false;
+
     @Attribute
     private int feedCount = 0;
 
@@ -146,14 +149,20 @@ public class ReferenceStripFeeder extends ReferenceFeeder {
     public Location getPickLocation() throws Exception {
         int feedCount = this.feedCount;
 
-        /*
-         * As a special case, before the feeder has been fed we return the pick location
-         * as if the feeder had been fed. This keeps us from returning a pick location
-         * that is off the edge of the strip.
-         */
-        if (feedCount == 0) {
-            feedCount = 1;
+        if (feedAfterPick) {
+            feedCount++;
         }
+        else {
+            /*
+             * As a special case, before the feeder has been fed we return the pick location
+             * as if the feeder had been fed. This keeps us from returning a pick location
+             * that is off the edge of the strip.
+             */
+            if (feedCount == 0) {
+                feedCount = 1;
+            }
+        }
+
         // Find the location of the part linearly along the tape
         Location[] lineLocations = getIdealLineLocations();
         // 20160608 - ldpgh/lutz_dd
@@ -208,9 +217,17 @@ public class ReferenceStripFeeder extends ReferenceFeeder {
     }
 
     public void feed(Nozzle nozzle) throws Exception {
-        setFeedCount(getFeedCount() + 1);
+        if (!feedAfterPick) {
+            setFeedCount(getFeedCount() + 1);
+        }
 
         updateVisionOffsets(nozzle);
+    }
+
+    public void postPick(Nozzle nozzle) throws Exception {
+        if (feedAfterPick) {
+            setFeedCount(getFeedCount() + 1);
+        }
     }
 
     private void updateVisionOffsets(Nozzle nozzle) throws Exception {
@@ -366,6 +383,14 @@ public class ReferenceStripFeeder extends ReferenceFeeder {
 
     public void setVisionEnabled(boolean visionEnabled) {
         this.visionEnabled = visionEnabled;
+    }
+
+    public boolean isFeedAfterPick() {
+        return feedAfterPick;
+    }
+
+    public void setFeedAfterPick(boolean feedAfterPick) {
+        this.feedAfterPick = feedAfterPick;
     }
 
     @Override
