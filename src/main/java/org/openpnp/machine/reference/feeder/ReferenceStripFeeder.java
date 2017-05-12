@@ -217,11 +217,11 @@ public class ReferenceStripFeeder extends ReferenceFeeder {
     }
 
     public void feed(Nozzle nozzle) throws Exception {
+        updateVisionOffsets(nozzle);
+
         if (!feedAfterPick) {
             setFeedCount(getFeedCount() + 1);
         }
-
-        updateVisionOffsets(nozzle);
     }
 
     public void postPick(Nozzle nozzle) throws Exception {
@@ -245,14 +245,14 @@ public class ReferenceStripFeeder extends ReferenceFeeder {
             // Note the use of holePitch here and partPitch in the
             // alternate case below.
             expectedLocation = Utils2D.getPointAlongLine(lineLocations[0], lineLocations[1],
-                    holePitch.multiply((feedCount - 1) / 2));
+                    holePitch.multiply(feedCount / 2));
         }
         else {
             // For tapes with a part pitch >= 4 there is always a reference
             // hole 2mm from a part so we just multiply by the part pitch
             // skipping over holes that are not reference holes.
             expectedLocation = Utils2D.getPointAlongLine(lineLocations[0], lineLocations[1],
-                    partPitch.multiply(feedCount - 1));
+                    partPitch.multiply(feedCount));
         }
         MovableUtils.moveToLocationAtSafeZ(camera, expectedLocation);
         // and look for the hole
