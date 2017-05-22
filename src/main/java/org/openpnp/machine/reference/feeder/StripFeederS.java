@@ -190,6 +190,21 @@ public class StripFeederS extends ReferenceFeeder {
         return l;
     }
 
+    public Location getHoleLocation(int feedOffset) throws Exception {
+        int feedCount = this.feedCount + feedOffset;
+
+        Location[] lineLocations = getIdealLineLocations();
+        double partPitchAdjusted = lineLocations[0].getLinearDistanceTo(lineLocations[1]);
+        partPitchAdjusted =
+                partPitchAdjusted / (Math.round(partPitchAdjusted / partPitch.getValue()));
+        Location l = Utils2D.getPointAlongLine(lineLocations[0], lineLocations[1],
+                new Length(feedCount * partPitchAdjusted, partPitch.getUnits()));
+        if (visionEnabled && visionOffsets != null) {
+            l = l.add(visionOffsets);
+        }
+        return l;
+    }
+
     public Location[] getIdealLineLocations() {
         if (visionLocation == null) {
             return new Location[] {referenceHoleLocation, lastHoleLocation};

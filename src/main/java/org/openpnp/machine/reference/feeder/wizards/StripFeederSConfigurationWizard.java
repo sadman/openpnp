@@ -101,6 +101,7 @@ public class StripFeederSConfigurationWizard extends AbstractConfigurationWizard
     private JButton btnIncFeedCount;
     private JButton btnDecFeedCount;
     private JButton btnMoveCamera;
+    private JButton btnMoveCamera2;
     private JLabel lblTapeType;
     private JComboBox comboBoxTapeType;
     private JLabel lblRotationInTape;
@@ -228,15 +229,6 @@ public class StripFeederSConfigurationWizard extends AbstractConfigurationWizard
         });
         panelTapeSettings.add(btnResetFeedCount, "12, 6");
 
-        btnIncFeedCount = new JButton(new AbstractAction("+") {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                textFieldFeedCount.setText(Integer.toString(Integer.parseInt(textFieldFeedCount.getText())+1));
-                applyAction.actionPerformed(e);
-            }
-        });
-        panelTapeSettings.add(btnIncFeedCount, "14, 6");
-
         btnDecFeedCount = new JButton(new AbstractAction("-") {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -244,7 +236,16 @@ public class StripFeederSConfigurationWizard extends AbstractConfigurationWizard
                 applyAction.actionPerformed(e);
             }
         });
-        panelTapeSettings.add(btnDecFeedCount, "16, 6");
+        panelTapeSettings.add(btnDecFeedCount, "14, 6");
+
+        btnIncFeedCount = new JButton(new AbstractAction("+") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                textFieldFeedCount.setText(Integer.toString(Integer.parseInt(textFieldFeedCount.getText())+1));
+                applyAction.actionPerformed(e);
+            }
+        });
+        panelTapeSettings.add(btnIncFeedCount, "16, 6");
 
         btnMoveCamera = new JButton(new AbstractAction("Move Cam") {
             @Override
@@ -257,6 +258,18 @@ public class StripFeederSConfigurationWizard extends AbstractConfigurationWizard
             }
         });
         panelTapeSettings.add(btnMoveCamera, "18, 6");
+
+        btnMoveCamera2 = new JButton(new AbstractAction("Move Cam 2") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    Configuration.get().getMachine().getDefaultHead().getDefaultCamera().moveTo(feeder.getHoleLocation(0).derive(null, null, null, 0.0));
+                }
+                catch (Exception exc) {
+                }
+            }
+        });
+        panelTapeSettings.add(btnMoveCamera2, "20, 6");
 
         lblUseVision = new JLabel("Use Vision?");
         panelTapeSettings.add(lblUseVision, "2, 8");
