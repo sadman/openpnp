@@ -59,11 +59,13 @@ import org.openpnp.machine.reference.feeder.StripFeederS;
 import org.openpnp.machine.reference.feeder.StripFeederS.TapeType;
 import org.openpnp.model.Configuration;
 import org.openpnp.model.Length;
+import org.openpnp.model.LengthUnit;
 import org.openpnp.model.Location;
 import org.openpnp.model.Part;
 import org.openpnp.spi.Camera;
 import org.openpnp.util.VisionUtils;
 import org.openpnp.vision.FluentCv;
+import org.pmw.tinylog.Logger;
 
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.FutureCallback;
@@ -96,11 +98,15 @@ public class StripFeederSConfigurationWizard extends AbstractConfigurationWizard
     private JLabel lblFeedCount;
     private JTextField textFieldFeedCount;
     private JButton btnResetFeedCount;
+    private JButton btnIncFeedCount;
+    private JButton btnDecFeedCount;
+    private JButton btnMoveCamera;
     private JLabel lblTapeType;
     private JComboBox comboBoxTapeType;
     private JLabel lblRotationInTape;
     private JTextField textFieldLocationRotation;
     private JButton btnAutoSetup;
+    private JButton btnAdjustFirstLast;
 
     private Location firstPartLocation;
     private Location secondPartLocation;
@@ -170,6 +176,10 @@ public class StripFeederSConfigurationWizard extends AbstractConfigurationWizard
                         FormSpecs.RELATED_GAP_COLSPEC, FormSpecs.DEFAULT_COLSPEC,
                         FormSpecs.RELATED_GAP_COLSPEC, FormSpecs.DEFAULT_COLSPEC,
                         FormSpecs.RELATED_GAP_COLSPEC, FormSpecs.DEFAULT_COLSPEC,
+                        FormSpecs.RELATED_GAP_COLSPEC, FormSpecs.DEFAULT_COLSPEC,
+                        FormSpecs.RELATED_GAP_COLSPEC, FormSpecs.DEFAULT_COLSPEC,
+                        FormSpecs.RELATED_GAP_COLSPEC, FormSpecs.DEFAULT_COLSPEC,
+                        FormSpecs.RELATED_GAP_COLSPEC, FormSpecs.DEFAULT_COLSPEC,
                         FormSpecs.RELATED_GAP_COLSPEC, FormSpecs.DEFAULT_COLSPEC,},
                 new RowSpec[] {FormSpecs.RELATED_GAP_ROWSPEC, FormSpecs.DEFAULT_ROWSPEC,
                         FormSpecs.RELATED_GAP_ROWSPEC, FormSpecs.DEFAULT_ROWSPEC,
@@ -177,7 +187,10 @@ public class StripFeederSConfigurationWizard extends AbstractConfigurationWizard
                         FormSpecs.RELATED_GAP_ROWSPEC, FormSpecs.DEFAULT_ROWSPEC,}));
 
         btnAutoSetup = new JButton(autoSetup);
-        panelTapeSettings.add(btnAutoSetup, "2, 2, 11, 1");
+        panelTapeSettings.add(btnAutoSetup, "2, 2, 5, 1");
+
+        btnAdjustFirstLast = new JButton(adjustFirstLast);
+        panelTapeSettings.add(btnAdjustFirstLast, "6, 2, 5, 1");
 
         lblTapeType = new JLabel("Tape Type");
         panelTapeSettings.add(lblTapeType, "2, 4, right, default");
@@ -214,6 +227,36 @@ public class StripFeederSConfigurationWizard extends AbstractConfigurationWizard
             }
         });
         panelTapeSettings.add(btnResetFeedCount, "12, 6");
+
+        btnIncFeedCount = new JButton(new AbstractAction("+") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                textFieldFeedCount.setText(Integer.toString(Integer.parseInt(textFieldFeedCount.getText())+1));
+                applyAction.actionPerformed(e);
+            }
+        });
+        panelTapeSettings.add(btnIncFeedCount, "14, 6");
+
+        btnDecFeedCount = new JButton(new AbstractAction("-") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                textFieldFeedCount.setText(Integer.toString(Integer.parseInt(textFieldFeedCount.getText())-1));
+                applyAction.actionPerformed(e);
+            }
+        });
+        panelTapeSettings.add(btnDecFeedCount, "16, 6");
+
+        btnMoveCamera = new JButton(new AbstractAction("Move Cam") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+            	try {
+            		Configuration.get().getMachine().getDefaultHead().getDefaultCamera().moveTo(feeder.getPickLocation().derive(null, null, null, 0.0));
+            	}
+            	catch (Exception exc) {
+            	}
+            }
+        });
+        panelTapeSettings.add(btnMoveCamera, "18, 6");
 
         lblUseVision = new JLabel("Use Vision?");
         panelTapeSettings.add(lblUseVision, "2, 8");
@@ -337,6 +380,128 @@ public class StripFeederSConfigurationWizard extends AbstractConfigurationWizard
         ComponentDecorators.decorateWithAutoSelectAndLengthConversion(textFieldFeedEndY);
         ComponentDecorators.decorateWithAutoSelectAndLengthConversion(textFieldFeedEndZ);
     }
+
+    Location findClosest(Camera camera, double maxDistance) {
+        List<Location> holeLocations = new ArrayList<>();
+        new FluentCv().setCamera(camera)
+                      .settleAndCapture()
+                      .toGray()
+                      .blurGaussian(feeder.getHoleBlurKernelSize())
+                      .findCirclesHough(feeder.getHoleDiameterMin(), feeder.getHoleDiameterMax(),
+                              feeder.getHolePitchMin())
+                      .filterCirclesByDistance(new Length(0, LengthUnit.Millimeters),
+                              new Length(maxDistance, LengthUnit.Millimeters))
+                      .convertCirclesToLocations(holeLocations);
+
+        Location closest = null;
+        double distance = 99999;
+        
+        for (Location hole : holeLocations)
+        {
+        	if (camera.getLocation().getLinearDistanceTo(hole) < distance)
+        	{
+        		distance = camera.getLocation().getLinearDistanceTo(hole);
+        		closest = hole;
+        	}
+        }
+        
+        if (closest != null) {
+            Logger.debug("closest: distance "+ distance +" location " + closest);
+            
+        }
+        return closest;
+    }
+
+    private Action adjustFirstLast = new AbstractAction("Adjust First / Last") {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            Camera cam;
+            try {
+                cam = Configuration.get().getMachine().getDefaultHead().getDefaultCamera();
+            } catch (Exception ex) {
+                MessageBoxes.errorBox(getTopLevelAncestor(), "Can't get camera", ex);
+                return;
+            }
+
+            CameraView cameraView = MainFrame.get()
+                    .getCameraViews()
+                    .getCameraView(cam);
+
+            Configuration.get().getMachine().submit(new Callable<Void>() {
+                public Void call() throws Exception {
+                    // adjust first hole
+                    cam.moveTo(feeder.getReferenceHoleLocation().derive(null, null, null, 0.0));
+                    Thread.sleep(cam.getSettleTimeMs());
+                    Location closest = findClosest(cam, 2);
+                    if (closest != null) {
+                        Logger.debug("Adjusted first by " + closest.getLinearDistanceTo(feeder.getReferenceHoleLocation()));
+                        feeder.setReferenceHoleLocation(closest);
+
+                        cam.moveTo(closest.derive(null, null, null, 0.0));
+                        Thread.sleep(cam.getSettleTimeMs());
+                        closest = findClosest(cam, 1);
+                        if (closest != null) {
+                            Logger.debug("Adjusted first by " + closest.getLinearDistanceTo(feeder.getReferenceHoleLocation()));
+                            feeder.setReferenceHoleLocation(closest);
+                        }
+                    }
+
+                    if (closest != null) {
+                        final Location loc = new Location(closest.getUnits(), closest.getX(), closest.getY(), closest.getZ(), closest.getRotation());
+                        SwingUtilities.invokeLater(new Runnable() {
+                            public void run() {
+                                Helpers.copyLocationIntoTextFields(loc,
+                                        textFieldFeedStartX, textFieldFeedStartY, null);
+                            }
+                        });
+                    }
+                    // adjust last hole
+                    cam.moveTo(feeder.getLastHoleLocation().derive(null, null, null, 0.0));
+                    Thread.sleep(cam.getSettleTimeMs());
+                    closest = findClosest(cam, 2);
+                    if (closest != null) {
+                        Logger.debug("Adjusted last by "+closest.getLinearDistanceTo(feeder.getLastHoleLocation()));
+                        feeder.setLastHoleLocation(closest);
+
+                        cam.moveTo(closest.derive(null, null, null, 0.0));
+                        Thread.sleep(cam.getSettleTimeMs());
+                        closest = findClosest(cam, 1);
+                        if (closest != null) {
+                            Logger.debug("Adjusted last by "+closest.getLinearDistanceTo(feeder.getLastHoleLocation()));
+                            feeder.setLastHoleLocation(closest);
+                        }
+                    }
+
+                    if (closest != null) {
+                        final Location loc = new Location(closest.getUnits(), closest.getX(), closest.getY(), closest.getZ(), closest.getRotation());
+                        SwingUtilities.invokeLater(new Runnable() {
+                            public void run() {
+                                Helpers.copyLocationIntoTextFields(loc,
+                                        textFieldFeedEndX, textFieldFeedEndY, null);
+                            }
+                        });
+                    }
+
+                    cam.moveTo(feeder.getPickLocation().derive(null, null, null, 0.0));
+                    return null;
+                }
+            }
+            , new FutureCallback<Void>() {
+                @Override
+                public void onSuccess(Void result) {}
+
+                @Override
+                public void onFailure(final Throwable t) {
+                    SwingUtilities.invokeLater(new Runnable() {
+                        public void run() {
+                            MessageBoxes.errorBox(getTopLevelAncestor(),
+                                    "Auto Adjust Failed", t);
+                        }
+                    });
+                }
+            });
+        }
+    };
 
     private Action autoSetup = new AbstractAction("Auto Setup") {
         @Override

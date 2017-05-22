@@ -373,7 +373,7 @@ public class StripFeederS extends ReferenceFeeder {
         return reverse;
     }
 
-    public void setFeedAfterPick(boolean feedAfterPick) {
+    public void setReverse(boolean feedAfterPick) {
         this.reverse = reverse;
     }
 
