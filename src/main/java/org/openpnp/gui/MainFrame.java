@@ -454,6 +454,10 @@ public class MainFrame extends JFrame {
                 machineControlsPanel.getJogControlsPanel().lowerIncrementAction);
         hotkeyActionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, mask),
                 machineControlsPanel.getJogControlsPanel().raiseIncrementAction);
+        hotkeyActionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_Q, mask),
+                feedersPanel.moveToPrevFeederAction);
+        hotkeyActionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_W, mask),
+                feedersPanel.moveToNextFeederAction);
 
         tabs = new JTabbedPane(JTabbedPane.TOP);
         splitPaneMachineAndTabs.setRightComponent(tabs);

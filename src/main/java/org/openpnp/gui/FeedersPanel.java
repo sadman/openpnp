@@ -283,7 +283,7 @@ public class FeedersPanel extends JPanel implements WizardContainer {
         }
         tableSorter.setRowFilter(rf);
     }
-
+    
     @Override
     public void wizardCompleted(Wizard wizard) {
         // Repaint the table so that any changed fields get updated.
@@ -445,6 +445,21 @@ public class FeedersPanel extends JPanel implements WizardContainer {
                 Location pickLocation = feeder.getPickLocation();
                 MovableUtils.moveToLocationAtSafeZ(nozzle, pickLocation);
             });
+        }
+    };
+    
+    public Action moveToPrevFeederAction = new AbstractAction("Move to previous feeder") {
+        @Override
+        public void actionPerformed(ActionEvent arg0) {
+            table.changeSelection(table.getSelectedRow() > 0 ? table.getSelectedRow() - 1 : 0, 0, false, false);
+        }
+    };
+
+    public Action moveToNextFeederAction = new AbstractAction("Move to next feeder") {
+        @Override
+        public void actionPerformed(ActionEvent arg0) {
+            table.changeSelection(table.getSelectedRow() < table.getRowCount() - 1 ?
+                    table.getSelectedRow() + 1 : table.getRowCount() - 1, 0, false, false);
         }
     };
 }
