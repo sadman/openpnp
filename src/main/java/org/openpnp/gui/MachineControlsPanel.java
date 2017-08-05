@@ -103,7 +103,6 @@ public class MachineControlsPanel extends JPanel {
         if (selectedTool instanceof Nozzle) {
             return (Nozzle) selectedTool;
         }
-
         try {
             return configuration.getMachine().getDefaultHead().getDefaultNozzle();
         }
@@ -114,9 +113,10 @@ public class MachineControlsPanel extends JPanel {
 
 
     public PasteDispenser getSelectedPasteDispenser() {
+        if (selectedTool instanceof PasteDispenser) {
+            return (PasteDispenser) selectedTool;
+        }
         try {
-            // TODO: We don't actually have a way to select a dispenser yet, so
-            // until we do we just return the first one.
             return Configuration.get().getMachine().getDefaultHead().getDefaultPasteDispenser();
         }
         catch (Exception e) {
@@ -287,7 +287,7 @@ public class MachineControlsPanel extends JPanel {
         public void actionPerformed(ActionEvent arg0) {
             UiUtils.submitUiMachineTask(() -> {
                 selectedTool.getHead().home();
-                startStopMachineAction.putValue(Action.SMALL_ICON, Icons.powerOff);
+                homeAction.putValue(Action.SMALL_ICON, Icons.home);
             });
         }
     };
@@ -319,7 +319,8 @@ public class MachineControlsPanel extends JPanel {
     private void updateStartStopButton(boolean enabled) {
         startStopMachineAction.putValue(Action.NAME, enabled ? "Stop" : "Start");
         startStopMachineAction.putValue(Action.SMALL_ICON,
-                enabled ? Icons.powerOffNoHome : Icons.powerOn);
+                enabled ? Icons.powerOff : Icons.powerOn);
+        homeAction.putValue(Action.SMALL_ICON, enabled ? Icons.homeWarning : Icons.home);
     }
 
     private MachineListener machineListener = new MachineListener.Adapter() {

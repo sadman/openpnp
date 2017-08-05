@@ -619,11 +619,14 @@ public class ReferencePnpJobProcessor extends AbstractPnpJobProcessor {
 
             PartAlignment partAlignment = findPartAligner(machine, part);
 
+            // Check if there is a fiducial override for the board location and if so, use it.
+            BoardLocation boardLocation = getFiducialCompensatedBoardLocation(jobPlacement.boardLocation);
+            
             if(partAlignment!=null) {
                 plannedPlacement.alignmentOffsets = VisionUtils.findPartAlignmentOffsets(
                         partAlignment,
                         part,
-                        jobPlacement.boardLocation,
+                        boardLocation,
                         placement.getLocation(), nozzle);
                 Logger.debug("Align {} with {}", part, nozzle);
             }
@@ -655,12 +658,8 @@ public class ReferencePnpJobProcessor extends AbstractPnpJobProcessor {
             }
 
             // Check if there is a fiducial override for the board location and if so, use it.
-            if (boardLocationFiducialOverrides.containsKey(boardLocation)) {
-                BoardLocation boardLocation2 = new BoardLocation(boardLocation.getBoard());
-                boardLocation2.setSide(boardLocation.getSide());
-                boardLocation2.setLocation(boardLocationFiducialOverrides.get(boardLocation));
-                boardLocation = boardLocation2;
-            }
+            boardLocation = getFiducialCompensatedBoardLocation(boardLocation);
+
             Location placementLocation =
                     Utils2D.calculateBoardPlacementLocation(boardLocation, placement.getLocation());
 
@@ -672,15 +671,11 @@ public class ReferencePnpJobProcessor extends AbstractPnpJobProcessor {
                         - this is useful for say an external rotating stage that the component is
                         placed on, rotated to correct placement angle, and then picked up again.
                  */
-                if(plannedPlacement.alignmentOffsets.getPreRotated())
-                {
-                    Location location = placementLocation;
-                    location = location.derive(null, null, null,
-                            plannedPlacement.alignmentOffsets.getLocation().getRotation());
-                    placementLocation = location;
+                if (plannedPlacement.alignmentOffsets.getPreRotated()) {
+                    placementLocation = placementLocation.subtractWithRotation(
+                            plannedPlacement.alignmentOffsets.getLocation());
                 }
-                else
-                {
+                else {
                     Location alignmentOffsets = plannedPlacement.alignmentOffsets.getLocation();
                     // Rotate the point 0,0 using the alignment offsets as a center point by the angle
                     // that is
@@ -852,5 +847,16 @@ public class ReferencePnpJobProcessor extends AbstractPnpJobProcessor {
         }
         return countA - countB;
     };
+    
+    BoardLocation getFiducialCompensatedBoardLocation(BoardLocation boardLocation) {
+        // Check if there is a fiducial override for the board location and if so, use it.
+        if (boardLocationFiducialOverrides.containsKey(boardLocation)) {
+            BoardLocation boardLocation2 = new BoardLocation(boardLocation.getBoard());
+            boardLocation2.setSide(boardLocation.getSide());
+            boardLocation2.setLocation(boardLocationFiducialOverrides.get(boardLocation));
+            return boardLocation2;
+        }
+        return boardLocation;
+    }
 
 }

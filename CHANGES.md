@@ -1,7 +1,154 @@
 This file lists major or notable changes to OpenPnP in chronological order. This is not
 a complete change list, only those that may directly interest or affect users.
 
+# 2017-07-30
+
+* Additional Keyboard Shortcut Support
+
+	Several new keyboard shortcuts have been added in an effort to support external control of
+	OpenPnP. The new hot keys allow you to start, step and stop jobs, adjust jog increments and
+	several other useful functions. For full details see the user manual:
+	
+	https://github.com/openpnp/openpnp/wiki/User-Manual#keyboard-shortcuts
+	
+	Implemented in PR https://github.com/openpnp/openpnp/pull/609
+	
+	Thank you to @yaddatrance for this helpful improvement!
+
+* CvPipeline Editor Result Pinning
+
+	Pipeline editor now supports pinning a stage's output so you can see how changes in
+	other stages affect the pinned one. Select any stage and then click the Pin icon in the
+	results panel to pin that stage. Selecting any other stage will let you edit that stage
+	while seeing the results of the one you pinned. Click the pin icon again to turn it off.
+	
+	Implemented in PR https://github.com/openpnp/openpnp/pull/612
+	
+	Thank you to @richard-sim for this awesome improvement!
+	
+* CvPipeline Editor Null Value Fix
+
+	Fixes issue #597 which caused the pipeline editor to sometimes set values to null when
+	changing stages. This bug often caused corrupt stage data and made it impossible to save
+	stages.
+	
+	Fixed in PR https://github.com/openpnp/openpnp/pull/611
+	
+	Many thanks to @richard-sim for tracking down and fixing this bug!
+
+# 2017-07-15
+
+* Code Cleanup: Potential Breaking Change
+
+	As part of a scheduled code cleanup several old configuration settings have been removed. If
+	you have upgraded within the past few months you should not see any change, but if your
+	configuration is very old it may fail to load with this version. If you get an error
+	starting OpenPnP after upgrading to this version, please look for and remove the following
+	lines from your machine.xml:
+	* `glue-dispense-job-processor`
+	* `vacuum-request-command` See https://www.youtube.com/watch?v=FsZ5dy7n1Ag
+	* `vacuum-report-regex` See https://www.youtube.com/watch?v=FsZ5dy7n1Ag
+	* In board files: `glue` attribute.
+	
+	If you have any trouble with this please post to the mailing list for help.
+	
+# 2017-07-02
+
+* Improved Nozzle Changer Speed Support
+
+	With thanks to @lilltroll77 we now have improved nozzle changer speed control. The speed
+	controls added recently had a limitation where different speeds would be used for different
+	parts of the movement. You can now define three speeds that are used between the four
+	movements and they are applied during those transitions whether it is for load or unload.
+	
+	Note that since the configuration has changed slightly for this feature, you should
+	check your speed settings before running a nozzle change with this new version. Settings
+	should be migrated over automatically, but it is prudent to check them before using.
+	
+	More information about this change is available at:
+	https://github.com/openpnp/openpnp/issues/584
+
+* Fiducial Vision Converted to CvPipeline
+
+	The fiducial vision system has been converted to use the CvPipeline system as per
+	https://github.com/openpnp/openpnp/issues/329.
+	
+	This allows users to easily edit the vision pipeline for fiducials, making it easy to
+	customize for different board and lighting scenarios. Pipeline editing works the same
+	as in bottom vision; you can edit the pipeline on a part by part basis or at a global
+	default.
+	
+	The default pipeline included with OpenPnP is an exact duplicate of the code that used to
+	be used internally - it has just been converted to pipeline form to make it editable.
+	
+	If you notice a degradation in fiducial performance, please post a message to the
+	mailing list at http://groups.google.com/group/openpnp
+
+# 2017-06-30
+
+* Power On, No Home Behavior
+
+	Now when you hit the power on button the home button becomes highlighted to indicate you should
+	home the machine. Previously the power button would change color which was confusing. 
+
+* SimulatedUpCamera Rewrite
+
+	The SimulatedUpCamera has been rewritten to work much better. It is now included in the default
+	configuration so that you can test out bottom vision before you have a machine. It's also
+	been made testable, so there is now test coverage for basic bottom vision operations.
+
+# 2017-06-28
+
+* CvPipeline Properties (Breaking Change)
+
+	In an effort to make it easier for developers to integrate custom functionality in CvPipelines,
+	the pipeline now has a map of properties that can be set be callers. This allows callers of
+	a pipeline to feed values in for the pipeline to use. This can be things like cameras, feeders,
+	parts, nozzles, etc. 
+	
+	This functionality replaces the previously added setFeeder and setNozzle calls. These calls
+	were too specific to certain pipelines and did not represent a good development direction
+	for the pipeline as it would eventually become cluttered with variables that did not
+	make sense for the pipeline as a whole.
+
+	Breaking Change: All existing stages have been migrated to the property system. If you have
+	custom stages that used getNozzle or getFeeder you will need to make minor updates to switch
+	these to use properties instead.
+	
+	* getNozzle() becomes (Nozzle) getProperty("nozzle")
+	* getFeeder() becomes (Feeder) getProperty("feeder")
+	
+	Finally, this change is the first step into supporting variables in CvPipeline. Eventually
+	you will be able to reference properties and other objects when setting parameters in stages.
+	 
+* AdvancedLoosePartFeeder
+
+	ReferenceLoosePartFeeder has received a big upgrade thanks to @dzach. The
+	new AdvancedLoosePartFeeder is able to be trained to recognize the orientation of loose parts,
+	allowing perfect placement of loose bins of both polarized and unpolartized parts. This
+	provides a complete feeding solution with no feeders at all!
+	
+	A lot of work and discussion has gone into this feature. For more details see:
+	https://github.com/openpnp/openpnp/issues/573#issuecomment-311633280
+	https://groups.google.com/forum/?utm_medium=email&utm_source=footer#!msg/openpnp/zqeeh6mGqtk/Ix9MgDbvCAAJ
+	
+	It is expected that the default pipelines will need to be tuned and updated as we
+	get more experience with this new system. Please post your feedback about this feeder
+	to the mailing list.
+	
+	Thank you @dzach!
+	
+# 2017-06-17
+
+* Nozzle Tip Changer Speed Settings
+
+	Nozzle Tip Changer now has independent speed settings for each movement. The speeds are a 
+	multiplier, similar to how it's used in other parts of the system. The value
+	is multiplied by the system speed slider to determine the final speed. A 1.0 is "full speed".
+
 # 2017-05-18
+
+* New Scripting Events
 
 	Two new Scripting events have been added: Job.Starting and Job.Finished. These are called
 	as the job is starting and after it completes. They are intended to aid in using conveyer
@@ -287,9 +434,9 @@ a complete change list, only those that may directly interest or affect users.
 	particularly with scripting. The GcodeDriver has been updated to work with this new
 	functionality. For more information see:
 	
-		https://github.com/openpnp/openpnp/wiki/GcodeDriver#actuator_read_regex
+	https://github.com/openpnp/openpnp/wiki/GcodeDriver#actuator_read_regex
 	
-		https://github.com/openpnp/openpnp/wiki/GcodeDriver:-Command-Reference#actuator_read_command
+	https://github.com/openpnp/openpnp/wiki/GcodeDriver:-Command-Reference#actuator_read_command
 
 	* The Actuators panel in Jog Controls now offers more options for controlling and testing
 	actuators. You can send true/false boolean values, send double values and read a response

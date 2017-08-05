@@ -37,16 +37,23 @@ import org.openpnp.util.UiUtils;
 import org.openpnp.util.VisionUtils;
 import org.openpnp.vision.pipeline.CvPipeline;
 import org.openpnp.vision.pipeline.CvStage.Result;
-import org.pmw.tinylog.Logger;
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.Element;
 import org.simpleframework.xml.ElementList;
 import org.simpleframework.xml.Root;
-import org.simpleframework.xml.core.Commit;
 
 public class ReferenceNozzleTip extends AbstractNozzleTip {
-
-
+    // TODO Remove after October 1, 2017.
+    @Element(required = false)
+    private Double changerStartSpeed = null;
+    @Element(required = false)
+    private Double changerMidSpeed = null;
+    @Element(required = false)
+    private Double changerMidSpeed2 = null;
+    @Element(required = false)
+    private Double changerEndSpeed = null;
+    // END TODO Remove after October 1, 2017.
+    
     @ElementList(required = false, entry = "id")
     private Set<String> compatiblePackageIds = new HashSet<>();
 
@@ -55,12 +62,26 @@ public class ReferenceNozzleTip extends AbstractNozzleTip {
 
     @Element(required = false)
     private Location changerStartLocation = new Location(LengthUnit.Millimeters);
+
+    @Element(required = false)
+    private double changerStartToMidSpeed = 1D;
+    
     @Element(required = false)
     private Location changerMidLocation = new Location(LengthUnit.Millimeters);
+    
+    @Element(required = false)
+    private double changerMidToMid2Speed = 1D;
+    
     @Element(required = false)
     private Location changerMidLocation2;
+    
+    @Element(required = false)
+    private double changerMid2ToEndSpeed = 1D;
+    
     @Element(required = false)
     private Location changerEndLocation = new Location(LengthUnit.Millimeters);
+    
+    
     @Element(required = false)
     private Calibration calibration = new Calibration();
 
@@ -93,6 +114,25 @@ public class ReferenceNozzleTip extends AbstractNozzleTip {
                  */
                 if (changerMidLocation2 == null) {
                     changerMidLocation2 = changerMidLocation.derive(null, null, null, null);
+                }
+                /*
+                 * Backwards compatibility for speed settings.
+                 *  Map the old variables to new one if present in machine.xlm and null the old ones
+                 *  */
+                if (changerStartSpeed != null) {
+                 changerStartToMidSpeed = changerStartSpeed;
+                 changerStartSpeed = null;
+            	}
+                if (changerMidSpeed != null) {
+                	changerMidToMid2Speed = changerMidSpeed;
+                	changerMidSpeed = null;
+                }
+                if (changerMidSpeed2 !=null) {
+                	changerMid2ToEndSpeed = changerMidSpeed2;
+                	changerMidSpeed2 = null;
+                }
+                if (changerEndSpeed != null) {
+                	changerEndSpeed = null;
                 }
             }
         });
@@ -136,7 +176,6 @@ public class ReferenceNozzleTip extends AbstractNozzleTip {
 
     @Override
     public PropertySheetHolder[] getChildPropertySheetHolders() {
-        // TODO Auto-generated method stub
         return null;
     }
 
@@ -188,6 +227,30 @@ public class ReferenceNozzleTip extends AbstractNozzleTip {
 
     public void setChangerEndLocation(Location changerEndLocation) {
         this.changerEndLocation = changerEndLocation;
+    }
+    
+    public double getChangerStartToMidSpeed() {
+        return changerStartToMidSpeed;
+    }
+
+    public void setChangerStartToMidSpeed(double changerStartToMidSpeed) {
+        this.changerStartToMidSpeed = changerStartToMidSpeed;
+    }
+
+    public double getChangerMidToMid2Speed() {
+        return changerMidToMid2Speed;
+    }
+
+    public void setChangerMidToMid2Speed(double changerMidToMid2Speed) {
+        this.changerMidToMid2Speed = changerMidToMid2Speed;
+    }
+
+    public double getChangerMid2ToEndSpeed() {
+        return changerMid2ToEndSpeed;
+    }
+
+    public void setChangerMid2ToEndSpeed(double changerMid2ToEndSpeed) {
+        this.changerMid2ToEndSpeed = changerMid2ToEndSpeed;
     }
 
     private Nozzle getParentNozzle() {
@@ -379,7 +442,7 @@ public class ReferenceNozzleTip extends AbstractNozzleTip {
 
         private Location findCircle() throws Exception {
             Camera camera = VisionUtils.getBottomVisionCamera();
-            pipeline.setCamera(camera);
+            pipeline.setProperty("camera", camera);
             pipeline.process();
             Location location;
             Object result = pipeline.getResult("result").model;
@@ -472,7 +535,7 @@ public class ReferenceNozzleTip extends AbstractNozzleTip {
         }
 
         public CvPipeline getPipeline() throws Exception {
-            pipeline.setCamera(VisionUtils.getBottomVisionCamera());
+            pipeline.setProperty("camera", VisionUtils.getBottomVisionCamera());
             return pipeline;
         }
 
