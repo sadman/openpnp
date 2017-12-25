@@ -123,6 +123,7 @@ public class ReferenceStripFeederConfigurationWizard extends AbstractConfigurati
     private JLabel lblUseVision;
     private JLabel lblPart;
     private JLabel lblRetryCount;
+    private JLabel lblFeedAfterPick;
     private JTextField retryCountTf;
 
     private boolean logDebugInfo = false;
