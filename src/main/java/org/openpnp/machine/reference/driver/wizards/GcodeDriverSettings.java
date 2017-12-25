@@ -44,6 +44,7 @@ import com.jgoodies.forms.layout.ColumnSpec;
 import com.jgoodies.forms.layout.FormLayout;
 import com.jgoodies.forms.layout.FormSpecs;
 import com.jgoodies.forms.layout.RowSpec;
+import javax.swing.JCheckBox;
 
 public class GcodeDriverSettings extends AbstractConfigurationWizard {
     private final GcodeDriver driver;
@@ -133,6 +134,13 @@ public class GcodeDriverSettings extends AbstractConfigurationWizard {
         settingsPanel.add(backlashFeedRateFactorTf, "4, 8, fill, default");
         backlashFeedRateFactorTf.setColumns(5);
         
+        JLabel lblNewLabel = new JLabel("Driver Name");
+        settingsPanel.add(lblNewLabel, "6, 8, right, default");
+        
+        driverName = new JTextField();
+        driverName.setColumns(5);
+        settingsPanel.add(driverName, "8, 8");
+        
         JLabel lblNonSquarenessFactor = new JLabel("Non-Squareness Factor");
         settingsPanel.add(lblNonSquarenessFactor, "2, 10, right, default");
         
@@ -187,6 +195,12 @@ public class GcodeDriverSettings extends AbstractConfigurationWizard {
         limitsMaxZTf = new JTextField();
         settingsPanel.add(limitsMaxZTf, "8, 20, fill, default");
         limitsMaxZTf.setColumns(5);
+        
+        JLabel lblVisualHoming = new JLabel("Visual Homing");
+        settingsPanel.add(lblVisualHoming, "6, 10, right, default");
+        
+        visualHoming = new JCheckBox("");
+        settingsPanel.add(visualHoming, "8, 10");
     }
 
     @Override
@@ -211,6 +225,8 @@ public class GcodeDriverSettings extends AbstractConfigurationWizard {
         addWrappedBinding(driver, "limitsMaxY", limitsMaxYTf, "text", doubleConverter);
         addWrappedBinding(driver, "limitsMinZ", limitsMinZTf, "text", doubleConverter);
         addWrappedBinding(driver, "limitsMaxZ", limitsMaxZTf, "text", doubleConverter);
+        addWrappedBinding(driver, "name", driverName, "text");
+        addWrappedBinding(driver, "visualHomingEnabled", visualHoming, "selected");
         
         ComponentDecorators.decorateWithAutoSelect(maxFeedRateTf);
         ComponentDecorators.decorateWithAutoSelect(backlashOffsetXTf);
@@ -225,6 +241,7 @@ public class GcodeDriverSettings extends AbstractConfigurationWizard {
         ComponentDecorators.decorateWithAutoSelect(limitsMaxYTf);
         ComponentDecorators.decorateWithAutoSelect(limitsMinZTf);
         ComponentDecorators.decorateWithAutoSelect(limitsMaxZTf);
+        ComponentDecorators.decorateWithAutoSelect(driverName);
     }
 
     public final Action exportProfileAction = new AbstractAction() {
@@ -368,6 +385,8 @@ public class GcodeDriverSettings extends AbstractConfigurationWizard {
     private JTextField limitsMaxZTf;
     private JCheckBox limitsEnabledCb;
     private JComboBox unitsCb;
+    private JTextField driverName;
+    private JCheckBox visualHoming;
 
     static class HeadMountableItem {
         private HeadMountable hm;
