@@ -448,14 +448,14 @@ public class StripFeederSConfigurationWizard extends AbstractConfigurationWizard
                     Location closest = findClosest(cam, 2);
                     if (closest != null) {
                         Logger.debug("Adjusted first by " + closest.getLinearDistanceTo(feeder.getReferenceHoleLocation()));
-                        feeder.setReferenceHoleLocation(closest);
+                        feeder.setReferenceHoleLocation(closest.add(feeder.getReferenceHoleLocation().derive(0.0, 0.0, null, 0.0)));
 
                         cam.moveTo(closest.derive(null, null, null, 0.0));
                         Thread.sleep(cam.getSettleTimeMs());
                         closest = findClosest(cam, 1);
                         if (closest != null) {
                             Logger.debug("Adjusted first by " + closest.getLinearDistanceTo(feeder.getReferenceHoleLocation()));
-                            feeder.setReferenceHoleLocation(closest);
+                            feeder.setReferenceHoleLocation(closest.add(feeder.getReferenceHoleLocation().derive(0.0, 0.0, null, 0.0)));
                         }
                     }
 
@@ -474,14 +474,14 @@ public class StripFeederSConfigurationWizard extends AbstractConfigurationWizard
                     closest = findClosest(cam, 2);
                     if (closest != null) {
                         Logger.debug("Adjusted last by "+closest.getLinearDistanceTo(feeder.getLastHoleLocation()));
-                        feeder.setLastHoleLocation(closest);
+                        feeder.setLastHoleLocation(closest.add(feeder.getLastHoleLocation().derive(0.0, 0.0, null, 0.0)));
 
                         cam.moveTo(closest.derive(null, null, null, 0.0));
                         Thread.sleep(cam.getSettleTimeMs());
                         closest = findClosest(cam, 1);
                         if (closest != null) {
                             Logger.debug("Adjusted last by "+closest.getLinearDistanceTo(feeder.getLastHoleLocation()));
-                            feeder.setLastHoleLocation(closest);
+                            feeder.setLastHoleLocation(closest.add(feeder.getLastHoleLocation().derive(0.0, 0.0, null, 0.0)));
                         }
                     }
 
