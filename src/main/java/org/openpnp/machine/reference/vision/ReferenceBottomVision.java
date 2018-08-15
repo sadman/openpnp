@@ -100,12 +100,23 @@ public class ReferenceBottomVision implements PartAlignment {
         try (CvPipeline pipeline = partSettings.getPipeline()) {
 
             RotatedRect rect = processPipelineAndGetResult(pipeline, camera, part, nozzle);
+            camera=(Camera)pipeline.getProperty("camera");
 
             angle = angleNorm(angleNorm(angle)
                     + angleNorm((rect.size.width < rect.size.height) ? 90 + rect.angle : rect.angle));
             // error is -angle
             // See https://github.com/openpnp/openpnp/pull/590 for explanations of the magic
-            // values below.
+            // values below. Reproduced here just in case:
+            
+            // For a 200 count stepper configured at 16 microsteps, a microstep is 0.1125 degrees.
+            // 360 / 200 / 16 = 0.1125
+            // 0.1125 / 2 = 0.0567 = half a microstep
+            // 0.0765 is chosen so that when adding to half a microstep it is just a bit more than a microstep.
+            // 0.0765 + 0.0567 = 0.1332
+
+            // The check is intended to not introduce further error if the error is small. 
+            // I believe it is to avoid rounding of microsteps, but I'm not clear on that.
+            
             if (Math.abs(angle) > 0.0765) {
                 angle += 0.0567 * Math.signum(angle);
             } // rounding
@@ -115,10 +126,11 @@ public class ReferenceBottomVision implements PartAlignment {
 
             rect = processPipelineAndGetResult(pipeline, camera, part, nozzle);
 
-            Logger.debug("Result rect ( center: {} size: {} angle: {} )", rect.center, rect.size, rect.angle);
+            Logger.debug("Result rect {}", rect);
             Location offsets = VisionUtils.getPixelCenterOffsets(camera, rect.center.x, rect.center.y)
                                           .derive(null, null, null, Double.NaN);
 
+            Logger.debug("Final offsets {}", offsets);
             displayResult(pipeline, part, offsets, camera);
             return new PartAlignment.PartAlignmentOffset(offsets, true);
         }
@@ -140,6 +152,7 @@ public class ReferenceBottomVision implements PartAlignment {
 
         try (CvPipeline pipeline = partSettings.getPipeline()) {
             RotatedRect rect = processPipelineAndGetResult(pipeline, camera, part, nozzle);
+            camera=(Camera)pipeline.getProperty("camera");
     
             Logger.debug("Result rect {}", rect);
     

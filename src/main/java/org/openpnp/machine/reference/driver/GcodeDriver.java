@@ -52,7 +52,7 @@ import org.simpleframework.xml.core.Commit;
 import com.google.common.base.Joiner;
 
 @Root
-public class GcodeDriver extends AbstractSerialPortDriver implements Named, Runnable {
+public class GcodeDriver extends AbstractReferenceDriver implements Named, Runnable {
     public enum CommandType {
         COMMAND_CONFIRM_REGEX,
         POSITION_REPORT_REGEX,
@@ -62,6 +62,7 @@ public class GcodeDriver extends AbstractSerialPortDriver implements Named, Runn
         DISABLE_COMMAND,
         POST_VISION_HOME_COMMAND,
         HOME_COMMAND("Id", "Name"),
+        HOME_COMPLETE_REGEX(true),
         PUMP_ON_COMMAND,
         PUMP_OFF_COMMAND,
         MOVE_TO_COMMAND(true, "Id", "Name", "FeedRate", "X", "Y", "Z", "Rotation"),
@@ -208,6 +209,7 @@ public class GcodeDriver extends AbstractSerialPortDriver implements Named, Runn
     
     @Commit
     public void commit() {
+        super.commit();
         for (GcodeDriver driver : subDrivers) {
             driver.parent = this;
         }
@@ -217,7 +219,21 @@ public class GcodeDriver extends AbstractSerialPortDriver implements Named, Runn
         axes = new ArrayList<>();
         axes.add(new Axis("x", Axis.Type.X, 0, "*"));
         axes.add(new Axis("y", Axis.Type.Y, 0, "*"));
-        axes.add(new Axis("z", Axis.Type.Z, 0, "*"));
+        try {
+            List<Nozzle> nozzles = Configuration.get().getMachine().getDefaultHead().getNozzles();
+            if (nozzles.size() < 1) {
+                throw new Exception("No nozzles.");
+            }
+            ArrayList<String> ids = new ArrayList<>();
+            for (Nozzle nozzle : nozzles) {
+                ids.add(nozzle.getId());
+            }
+            Axis axis = new Axis("z", Axis.Type.Z, 0, ids.toArray(new String[] {}));
+            axes.add(axis);
+        }
+        catch (Exception e) {
+            axes.add(new Axis("z", Axis.Type.Z, 0, "*"));
+        }
         axes.add(new Axis("rotation", Axis.Type.Rotation, 0, "*"));
 
         commands = new ArrayList<>();
@@ -228,7 +244,7 @@ public class GcodeDriver extends AbstractSerialPortDriver implements Named, Runn
     }
 
     public synchronized void connect() throws Exception {
-        super.connect();
+        getCommunications().connect();
 
         connected = false;
         readerThread = new Thread(this);
@@ -306,7 +322,29 @@ public class GcodeDriver extends AbstractSerialPortDriver implements Named, Runn
         String command = getCommand(null, CommandType.HOME_COMMAND);
         command = substituteVariable(command, "Id", head.getId());
         command = substituteVariable(command, "Name", head.getName());
-        sendGcode(command, -1);
+        long timeout = -1;
+        List<String> responses = sendGcode(command, timeout);
+
+        // Check home complete response against user's regex
+        String homeCompleteRegex = getCommand(null, CommandType.HOME_COMPLETE_REGEX);
+        if (homeCompleteRegex != null) {
+            if (timeout == -1) {
+                timeout = Long.MAX_VALUE;
+            }
+            if (!containsMatch(responses, homeCompleteRegex)) {
+                long t = System.currentTimeMillis();
+                boolean done = false;
+                while (!done && System.currentTimeMillis() - t < timeout) {
+                    done = containsMatch(sendCommand(null, 250), homeCompleteRegex);
+                }
+                if (!done) {
+                    // Should never get here but just in case.
+                    throw new Exception("Timed out waiting for home to complete.");
+                }
+            }
+        }
+
+
 
         // We need to specially handle X and Y axes to support the non-squareness factor.
         Axis xAxis = null;
@@ -813,7 +851,7 @@ public class GcodeDriver extends AbstractSerialPortDriver implements Named, Runn
         }
 
         try {
-            super.disconnect();
+            getCommunications().disconnect();
         }
         catch (Exception e) {
             Logger.error("disconnect()", e);
@@ -864,9 +902,8 @@ public class GcodeDriver extends AbstractSerialPortDriver implements Named, Runn
 
         // Send the command, if one was specified
         if (command != null) {
-            Logger.trace("[{}] >> {}", portName, command);
-            output.write(command.getBytes());
-            output.write("\n".getBytes());
+            Logger.trace("[{}] >> {}", getCommunications().getConnectionName(), command);
+            getCommunications().writeLine(command);
         }
 
         // Collect responses till we find one with the confirmation or we timeout. Return
@@ -916,7 +953,7 @@ public class GcodeDriver extends AbstractSerialPortDriver implements Named, Runn
         responseQueue.drainTo(responses);
 
         Logger.debug("sendCommand({} {}, {}) => {}",
-                new Object[] {portName, command, timeout == Long.MAX_VALUE ? -1 : timeout, responses});
+                new Object[] {getCommunications().getConnectionName(), command, timeout == Long.MAX_VALUE ? -1 : timeout, responses});
         return responses;
     }
 
@@ -924,7 +961,7 @@ public class GcodeDriver extends AbstractSerialPortDriver implements Named, Runn
         while (!disconnectRequested) {
             String line;
             try {
-                line = readLine().trim();
+                line = getCommunications().readLine().trim();
             }
             catch (TimeoutException ex) {
                 continue;
@@ -934,7 +971,7 @@ public class GcodeDriver extends AbstractSerialPortDriver implements Named, Runn
                 return;
             }
             line = line.trim();
-            Logger.trace("[{}] << {}", portName, line);
+            Logger.trace("[{}] << {}", getCommunications().getConnectionName(), line);
             if (!processPositionReport(line)) {
                 responseQueue.offer(line);
             }
@@ -1022,7 +1059,7 @@ public class GcodeDriver extends AbstractSerialPortDriver implements Named, Runn
                 new PropertySheetWizardAdapter(new GcodeDriverGcodes(this), "Gcode"),
                 new PropertySheetWizardAdapter(new GcodeDriverSettings(this), "General Settings"),
                 new PropertySheetWizardAdapter(new GcodeDriverConsole(this), "Console"),
-                new PropertySheetWizardAdapter(super.getConfigurationWizard(), "Serial")
+                new PropertySheetWizardAdapter(super.getConfigurationWizard(), "Communications")
         };
     }
     
