@@ -620,7 +620,6 @@ public class GcodeDriver extends AbstractReferenceDriver implements Named, Runna
             	throw new Exception("Move to [" + x + ", " + y + ", "+ z + "] is outside of set limits.");
             }
 
-            String command = getCommand(hm, CommandType.MOVE_TO_COMMAND);
             command = substituteVariable(command, "Id", hm.getId());
             command = substituteVariable(command, "Name", hm.getName());
             command = substituteVariable(command, "FeedRate", maxFeedRate * speed);
