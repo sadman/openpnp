@@ -67,6 +67,7 @@ import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.openpnp.ConfigurationListener;
+import org.openpnp.Translations;
 import org.openpnp.events.BoardLocationSelectedEvent;
 import org.openpnp.events.JobLoadedEvent;
 import org.openpnp.events.PlacementSelectedEvent;
@@ -119,13 +120,13 @@ public class JobPanel extends JPanel {
     final private Configuration configuration;
     final private MainFrame frame;
 
-    private static final String PREF_DIVIDER_POSITION = "JobPanel.dividerPosition";
+    private static final String PREF_DIVIDER_POSITION = "JobPanel.dividerPosition"; //$NON-NLS-1$
     private static final int PREF_DIVIDER_POSITION_DEF = -1;
 
-    private static final String UNTITLED_JOB_FILENAME = "Untitled.job.xml";
+    private static final String UNTITLED_JOB_FILENAME = "Untitled.job.xml"; //$NON-NLS-1$
 
-    private static final String PREF_RECENT_FILES = "JobPanel.recentFiles";
-    private static final String PREF_LAST_DIRECTORY = "JobPanel.lastDirectory";
+    private static final String PREF_RECENT_FILES = "JobPanel.recentFiles"; //$NON-NLS-1$
+    private static final String PREF_LAST_DIRECTORY = "JobPanel.lastDirectory"; //$NON-NLS-1$
     private static final int PREF_RECENT_FILES_MAX = 10;
 
     private BoardLocationsTableModel boardLocationsTableModel;
@@ -283,7 +284,7 @@ public class JobPanel extends JPanel {
         splitPane.setContinuousLayout(true);
         splitPane
                 .setDividerLocation(prefs.getInt(PREF_DIVIDER_POSITION, PREF_DIVIDER_POSITION_DEF));
-        splitPane.addPropertyChangeListener("dividerLocation", new PropertyChangeListener() {
+        splitPane.addPropertyChangeListener("dividerLocation", new PropertyChangeListener() { //$NON-NLS-1$
             @Override
             public void propertyChange(PropertyChangeEvent evt) {
                 prefs.putInt(PREF_DIVIDER_POSITION, splitPane.getDividerLocation());
@@ -292,7 +293,7 @@ public class JobPanel extends JPanel {
 
         JPanel pnlBoards = new JPanel();
         pnlBoards.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED, null, null),
-                "Boards", TitledBorder.LEADING, TitledBorder.TOP, null, new Color(0, 0, 0)));
+                "Boards", TitledBorder.LEADING, TitledBorder.TOP, null, new Color(0, 0, 0))); //$NON-NLS-1$
         pnlBoards.setLayout(new BorderLayout(0, 0));
 
         JToolBar toolBarBoards = new JToolBar();
@@ -379,7 +380,7 @@ public class JobPanel extends JPanel {
 
         add(splitPane);
 
-        mnOpenRecent = new JMenu("Open Recent Job...");
+        mnOpenRecent = new JMenu("Open Recent Job..."); //$NON-NLS-1$
         mnOpenRecent.setMnemonic(KeyEvent.VK_R);
         loadRecentJobs();
 
@@ -390,12 +391,12 @@ public class JobPanel extends JPanel {
                 machine.addListener(machineListener);
 
                 if (machine.getPnpJobProcessor() != null) {
-                    tabbedPane.addTab("Pick and Place", null, jobPlacementsPanel, null);
+                    tabbedPane.addTab("Pick and Place", null, jobPlacementsPanel, null); //$NON-NLS-1$
                     machine.getPnpJobProcessor().addTextStatusListener(textStatusListener);
                 }
 
                 if (machine.getPasteDispenseJobProcessor() != null) {
-                    tabbedPane.addTab("Solder Paste", null, jobPastePanel, null);
+                    tabbedPane.addTab("Solder Paste", null, jobPastePanel, null); //$NON-NLS-1$
                     machine.getPasteDispenseJobProcessor()
                             .addTextStatusListener(textStatusListener);
                 }
@@ -424,7 +425,7 @@ public class JobPanel extends JPanel {
             return;
         }
         SwingUtilities.invokeLater(() -> {
-            MainFrame.get().showTab("Job");
+            MainFrame.get().showTab("Job"); //$NON-NLS-1$
 
             selectBoardLocation(event.boardLocation);
         });
@@ -436,9 +437,9 @@ public class JobPanel extends JPanel {
             return;
         }
         SwingUtilities.invokeLater(() -> {
-            MainFrame.get().showTab("Job");
+            MainFrame.get().showTab("Job"); //$NON-NLS-1$
 
-            showTab("Pick and Place");
+            showTab("Pick and Place"); //$NON-NLS-1$
 
             selectBoardLocation(event.boardLocation);
 
@@ -469,13 +470,13 @@ public class JobPanel extends JPanel {
 
     public void setJob(Job job) {
         if (this.job != null) {
-            this.job.removePropertyChangeListener("dirty", titlePropertyChangeListener);
-            this.job.removePropertyChangeListener("file", titlePropertyChangeListener);
+            this.job.removePropertyChangeListener("dirty", titlePropertyChangeListener); //$NON-NLS-1$
+            this.job.removePropertyChangeListener("file", titlePropertyChangeListener); //$NON-NLS-1$
         }
         this.job = job;
         boardLocationsTableModel.setJob(job);
-        job.addPropertyChangeListener("dirty", titlePropertyChangeListener);
-        job.addPropertyChangeListener("file", titlePropertyChangeListener);
+        job.addPropertyChangeListener("dirty", titlePropertyChangeListener); //$NON-NLS-1$
+        job.addPropertyChangeListener("file", titlePropertyChangeListener); //$NON-NLS-1$
         updateTitle();
         updateJobActions();
         getJobPlacementsPanel().updateActivePlacements();
@@ -496,7 +497,7 @@ public class JobPanel extends JPanel {
     private void loadRecentJobs() {
         recentJobs.clear();
         for (int i = 0; i < PREF_RECENT_FILES_MAX; i++) {
-            String path = prefs.get(PREF_RECENT_FILES + "_" + i, null);
+            String path = prefs.get(PREF_RECENT_FILES + "_" + i, null); //$NON-NLS-1$
             if (path != null && new File(path).exists()) {
                 File file = new File(path);
                 recentJobs.add(file);
@@ -508,11 +509,11 @@ public class JobPanel extends JPanel {
     private void saveRecentJobs() {
         // blow away all the existing values
         for (int i = 0; i < PREF_RECENT_FILES_MAX; i++) {
-            prefs.remove(PREF_RECENT_FILES + "_" + i);
+            prefs.remove(PREF_RECENT_FILES + "_" + i); //$NON-NLS-1$
         }
         // update with what we have now
         for (int i = 0; i < recentJobs.size(); i++) {
-            prefs.put(PREF_RECENT_FILES + "_" + i, recentJobs.get(i).getAbsolutePath());
+            prefs.put(PREF_RECENT_FILES + "_" + i, recentJobs.get(i).getAbsolutePath()); //$NON-NLS-1$
         }
         updateRecentJobsMenu();
     }
@@ -570,9 +571,9 @@ public class JobPanel extends JPanel {
         if (getJob().isDirty()) {
             String name = (job.getFile() == null ? UNTITLED_JOB_FILENAME : job.getFile().getName());
             int result = JOptionPane.showConfirmDialog(frame,
-                    "Do you want to save your changes to " + name + "?" + "\n"
-                            + "If you don't save, your changes will be lost.",
-                    "Save " + name + "?", JOptionPane.YES_NO_CANCEL_OPTION);
+                    "Do you want to save your changes to " + name + "?" + "\n" //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+                            + "If you don't save, your changes will be lost.", //$NON-NLS-1$
+                    "Save " + name + "?", JOptionPane.YES_NO_CANCEL_OPTION); //$NON-NLS-1$ //$NON-NLS-2$
             if (result == JOptionPane.YES_OPTION) {
                 return saveJob();
             }
@@ -587,16 +588,16 @@ public class JobPanel extends JPanel {
         for (Board board : configuration.getBoards()) {
             if (board.isDirty()) {
                 int result = JOptionPane.showConfirmDialog(getTopLevelAncestor(),
-                        "Do you want to save your changes to " + board.getFile().getName() + "?"
-                                + "\n" + "If you don't save, your changes will be lost.",
-                        "Save " + board.getFile().getName() + "?",
+                        "Do you want to save your changes to " + board.getFile().getName() + "?" //$NON-NLS-1$ //$NON-NLS-2$
+                                + "\n" + "If you don't save, your changes will be lost.", //$NON-NLS-1$ //$NON-NLS-2$
+                        "Save " + board.getFile().getName() + "?", //$NON-NLS-1$ //$NON-NLS-2$
                         JOptionPane.YES_NO_CANCEL_OPTION);
                 if (result == JOptionPane.YES_OPTION) {
                     try {
                         configuration.saveBoard(board);
                     }
                     catch (Exception e) {
-                        MessageBoxes.errorBox(getTopLevelAncestor(), "Board Save Error",
+                        MessageBoxes.errorBox(getTopLevelAncestor(), "Board Save Error", //$NON-NLS-1$
                                 e.getMessage());
                         return false;
                     }
@@ -621,24 +622,24 @@ public class JobPanel extends JPanel {
                 return true;
             }
             catch (Exception e) {
-                MessageBoxes.errorBox(frame, "Job Save Error", e.getMessage());
+                MessageBoxes.errorBox(frame, "Job Save Error", e.getMessage()); //$NON-NLS-1$
                 return false;
             }
         }
     }
 
     private boolean saveJobAs() {
-    	fileDialog.setDialogTitle("Save Job As...");
+    	fileDialog.setDialogTitle("Save Job As..."); //$NON-NLS-1$
     	fileDialog.resetChoosableFileFilters();
         fileDialog.setFileFilter(new FileFilter() {
 			@Override
 			public boolean accept(File f) {
-				return f.isDirectory() | f.getName().toLowerCase().endsWith("job.xml");
+				return f.isDirectory() | f.getName().toLowerCase().endsWith("job.xml"); //$NON-NLS-1$
 			}
 
 			@Override
 			public String getDescription() {
-				return "Job files (.job.xml)";
+				return "Job files (.job.xml)"; //$NON-NLS-1$
 			}
         });
         
@@ -651,13 +652,13 @@ public class JobPanel extends JPanel {
         try {
             File file = fileDialog.getSelectedFile();
 
-            if (!file.getName().toLowerCase().endsWith(".job.xml")) {
-            	file = new File(file.getParent(), file.getName() + ".job.xml");
+            if (!file.getName().toLowerCase().endsWith(".job.xml")) { //$NON-NLS-1$
+            	file = new File(file.getParent(), file.getName() + ".job.xml"); //$NON-NLS-1$
             }
             if (file.exists()) {
                 int ret = JOptionPane.showConfirmDialog(getTopLevelAncestor(),
-                        file.getName() + " already exists. Do you want to replace it?",
-                        "Replace file?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                        file.getName() + " already exists. Do you want to replace it?", //$NON-NLS-1$
+                        "Replace file?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE); //$NON-NLS-1$
                 if (ret != JOptionPane.YES_OPTION) {
                     return false;
                 }
@@ -667,7 +668,7 @@ public class JobPanel extends JPanel {
             return true;
         }
         catch (Exception e) {
-            MessageBoxes.errorBox(frame, "Job Save Error", e.getMessage());
+            MessageBoxes.errorBox(frame, "Job Save Error", e.getMessage()); //$NON-NLS-1$
             return false;
         }
     }
@@ -678,30 +679,30 @@ public class JobPanel extends JPanel {
     private void updateJobActions() {
         if (fsm.getState() == State.Stopped) {
             startPauseResumeJobAction.setEnabled(true);
-            startPauseResumeJobAction.putValue(AbstractAction.NAME, "Start");
+            startPauseResumeJobAction.putValue(AbstractAction.NAME, "Start"); //$NON-NLS-1$
             startPauseResumeJobAction.putValue(AbstractAction.SMALL_ICON, Icons.start);
             startPauseResumeJobAction.putValue(AbstractAction.SHORT_DESCRIPTION,
-                    "Start processing the job.");
+                    "Start processing the job."); //$NON-NLS-1$
             stopJobAction.setEnabled(false);
             stepJobAction.setEnabled(true);
             tabbedPane.setEnabled(true);
         }
         else if (fsm.getState() == State.Running) {
             startPauseResumeJobAction.setEnabled(true);
-            startPauseResumeJobAction.putValue(AbstractAction.NAME, "Pause");
+            startPauseResumeJobAction.putValue(AbstractAction.NAME, "Pause"); //$NON-NLS-1$
             startPauseResumeJobAction.putValue(AbstractAction.SMALL_ICON, Icons.pause);
             startPauseResumeJobAction.putValue(AbstractAction.SHORT_DESCRIPTION,
-                    "Pause processing of the job.");
+                    "Pause processing of the job."); //$NON-NLS-1$
             stopJobAction.setEnabled(true);
             stepJobAction.setEnabled(false);
             tabbedPane.setEnabled(false);
         }
         else if (fsm.getState() == State.Stepping) {
             startPauseResumeJobAction.setEnabled(true);
-            startPauseResumeJobAction.putValue(AbstractAction.NAME, "Resume");
+            startPauseResumeJobAction.putValue(AbstractAction.NAME, "Resume"); //$NON-NLS-1$
             startPauseResumeJobAction.putValue(AbstractAction.SMALL_ICON, Icons.start);
             startPauseResumeJobAction.putValue(AbstractAction.SHORT_DESCRIPTION,
-                    "Resume processing of the job.");
+                    "Resume processing of the job."); //$NON-NLS-1$
             stopJobAction.setEnabled(true);
             stepJobAction.setEnabled(true);
             tabbedPane.setEnabled(false);
@@ -717,14 +718,14 @@ public class JobPanel extends JPanel {
     }
 
     private void updateTitle() {
-        String title = String.format("OpenPnP - %s%s", job.isDirty() ? "*" : "",
+        String title = String.format("OpenPnP - %s%s", job.isDirty() ? "*" : "", //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
                 (job.getFile() == null ? UNTITLED_JOB_FILENAME : job.getFile().getName()));
         frame.setTitle(title);
     }
     
     private boolean checkJobStopped() {
         if (fsm.getState() != State.Stopped) {
-            MessageBoxes.errorBox(this, "Error", "Job must be stopped first.");
+            MessageBoxes.errorBox(this, "Error", "Job must be stopped first."); //$NON-NLS-1$ //$NON-NLS-2$
             return false;
         }
         return true;
@@ -735,8 +736,8 @@ public class JobPanel extends JPanel {
             return;
         }
         if (getSelectedBoardLocation() == null) {
-            MessageBoxes.errorBox(getTopLevelAncestor(), "Import Failed",
-                    "Please select a board in the Jobs tab to import into.");
+            MessageBoxes.errorBox(getTopLevelAncestor(), "Import Failed", //$NON-NLS-1$
+                    "Please select a board in the Jobs tab to import into."); //$NON-NLS-1$
             return;
         }
 
@@ -745,7 +746,7 @@ public class JobPanel extends JPanel {
             boardImporter = boardImporterClass.newInstance();
         }
         catch (Exception e) {
-            MessageBoxes.errorBox(getTopLevelAncestor(), "Import Failed", e);
+            MessageBoxes.errorBox(getTopLevelAncestor(), "Import Failed", e); //$NON-NLS-1$
             return;
         }
 
@@ -771,11 +772,11 @@ public class JobPanel extends JPanel {
             }
         }
         catch (Exception e) {
-            MessageBoxes.errorBox(getTopLevelAncestor(), "Import Failed", e);
+            MessageBoxes.errorBox(getTopLevelAncestor(), "Import Failed", e); //$NON-NLS-1$
         }
     }
 
-    public final Action openJobAction = new AbstractAction("Open Job...") {
+    public final Action openJobAction = new AbstractAction(Translations.getString("JobPanel.Action.Job.Open")) { //$NON-NLS-1$
         {
             putValue(MNEMONIC_KEY, KeyEvent.VK_O);
             putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke('O',
@@ -790,17 +791,17 @@ public class JobPanel extends JPanel {
             if (!checkForModifications()) {
                 return;
             }
-        	fileDialog.setDialogTitle("Open Job...");
+        	fileDialog.setDialogTitle("Open Job..."); //$NON-NLS-1$
         	fileDialog.resetChoosableFileFilters();
             fileDialog.setFileFilter(new FileFilter() {
 				@Override
 				public boolean accept(File f) {
-					return f.isDirectory() | f.getName().toLowerCase().endsWith("job.xml");
+					return f.isDirectory() | f.getName().toLowerCase().endsWith("job.xml"); //$NON-NLS-1$
 				}
 
 				@Override
 				public String getDescription() {
-					return "Job files (.job.xml)";
+					return "Job files (.job.xml)"; //$NON-NLS-1$
 				}
             });
             
@@ -820,12 +821,12 @@ public class JobPanel extends JPanel {
             }
             catch (Exception e) {
                 e.printStackTrace();
-                MessageBoxes.errorBox(frame, "Job Load Error", e.getMessage());
+                MessageBoxes.errorBox(frame, "Job Load Error", e.getMessage()); //$NON-NLS-1$
             }
         }
     };
 
-    public final Action newJobAction = new AbstractAction("New Job") {
+    public final Action newJobAction = new AbstractAction(Translations.getString("JobPanel.Action.Job.New")) { //$NON-NLS-1$
         {
             putValue(MNEMONIC_KEY, KeyEvent.VK_N);
             putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke('N',
@@ -844,7 +845,7 @@ public class JobPanel extends JPanel {
         }
     };
 
-    public final Action saveJobAction = new AbstractAction("Save Job") {
+    public final Action saveJobAction = new AbstractAction(Translations.getString("JobPanel.Action.Job.Save")) { //$NON-NLS-1$
         {
             putValue(MNEMONIC_KEY, KeyEvent.VK_S);
             putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke('S',
@@ -857,7 +858,7 @@ public class JobPanel extends JPanel {
         }
     };
 
-    public final Action saveJobAsAction = new AbstractAction("Save Job As...") {
+    public final Action saveJobAsAction = new AbstractAction(Translations.getString("JobPanel.Action.Job.SaveAs")) { //$NON-NLS-1$
         {
             putValue(MNEMONIC_KEY, KeyEvent.VK_A);
         }
@@ -876,14 +877,14 @@ public class JobPanel extends JPanel {
      */
     public void jobStart() throws Exception {
         String title = tabbedPane.getTitleAt(tabbedPane.getSelectedIndex());
-        if (title.equals("Solder Paste")) {
+        if (title.equals("Solder Paste")) { //$NON-NLS-1$
             jobProcessor = Configuration.get().getMachine().getPasteDispenseJobProcessor();
         }
-        else if (title.equals("Pick and Place")) {
+        else if (title.equals("Pick and Place")) { //$NON-NLS-1$
             jobProcessor = Configuration.get().getMachine().getPnpJobProcessor();
         }
         else {
-            throw new Error("Programmer error: Unknown tab title.");
+            throw new Error("Programmer error: Unknown tab title."); //$NON-NLS-1$
         }
         jobProcessor.initialize(job);
         jobRun();
@@ -910,10 +911,10 @@ public class JobPanel extends JPanel {
 
         }, (t) -> {
             List<String> options = new ArrayList<>();
-            String retryOption = "Try Again";
-            String skipOption = "Skip";
-            String ignoreContinueOption = "Ignore and Continue";
-            String pauseOption = "Pause Job";
+            String retryOption = "Try Again"; //$NON-NLS-1$
+            String skipOption = "Skip"; //$NON-NLS-1$
+            String ignoreContinueOption = "Ignore and Continue"; //$NON-NLS-1$
+            String pauseOption = "Pause Job"; //$NON-NLS-1$
 
             options.add(retryOption);
             if (jobProcessor.canSkip()) {
@@ -924,7 +925,7 @@ public class JobPanel extends JPanel {
             }
             options.add(pauseOption);
             int result = JOptionPane.showOptionDialog(getTopLevelAncestor(), t.getMessage(),
-                    "Job Error", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.ERROR_MESSAGE, null,
+                    "Job Error", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.ERROR_MESSAGE, null, //$NON-NLS-1$
                     options.toArray(), retryOption);
             String selectedOption = options.get(result);
             if (selectedOption.equals(retryOption)) {
@@ -1042,17 +1043,17 @@ public class JobPanel extends JPanel {
     public final Action startPauseResumeJobAction = new AbstractAction() {
         {
             putValue(SMALL_ICON, Icons.start);
-            putValue(NAME, "Start");
-            putValue(SHORT_DESCRIPTION, "Start processing the job.");
+            putValue(NAME, Translations.getString("JobPanel.Action.Job.Start")); //$NON-NLS-1$
+            putValue(SHORT_DESCRIPTION, Translations.getString("JobPanel.Action.Job.Start.Description")); //$NON-NLS-1$
         }
 
         @Override
         public void actionPerformed(ActionEvent arg0) {
-            System.out.println("isAllPlaced " + isAllPlaced());
+            System.out.println("isAllPlaced " + isAllPlaced()); //$NON-NLS-1$
             if (isAllPlaced()) {
                 int ret = JOptionPane.showConfirmDialog(getTopLevelAncestor(),
-                        "All placements have been placed already. Reset all placements before starting job?",
-                        "Reset placement status?", JOptionPane.YES_NO_OPTION,
+                        "All placements have been placed already. Reset all placements before starting job?", //$NON-NLS-1$
+                        "Reset placement status?", JOptionPane.YES_NO_OPTION, //$NON-NLS-1$
                         JOptionPane.WARNING_MESSAGE);
                 if (ret == JOptionPane.YES_OPTION) {
                     for (BoardLocation boardLocation : job.getBoardLocations()) {
@@ -1070,8 +1071,8 @@ public class JobPanel extends JPanel {
     public final Action stepJobAction = new AbstractAction() {
         {
             putValue(SMALL_ICON, Icons.step);
-            putValue(NAME, "Step");
-            putValue(SHORT_DESCRIPTION, "Process one step of the job and pause.");
+            putValue(NAME, Translations.getString("JobPanel.Action.Job.Step")); //$NON-NLS-1$
+            putValue(SHORT_DESCRIPTION, Translations.getString("JobPanel.Action.Job.Step.Description")); //$NON-NLS-1$
         }
 
         @Override
@@ -1085,8 +1086,8 @@ public class JobPanel extends JPanel {
     public final Action stopJobAction = new AbstractAction() {
         {
             putValue(SMALL_ICON, Icons.stop);
-            putValue(NAME, "Stop");
-            putValue(SHORT_DESCRIPTION, "Stop processing the job.");
+            putValue(NAME, Translations.getString("JobPanel.Action.Job.Stop")); //$NON-NLS-1$
+            putValue(SHORT_DESCRIPTION, Translations.getString("JobPanel.Action.Job.Stop.Description")); //$NON-NLS-1$
         }
 
         @Override
@@ -1099,9 +1100,9 @@ public class JobPanel extends JPanel {
     
     public final Action resetAllPlacedAction = new AbstractAction() {
         {
-            putValue(NAME, "Reset All Placed");
+            putValue(NAME, Translations.getString("JobPanel.Action.Job.ResetAllPlaced")); //$NON-NLS-1$
 //            putValue(SMALL_ICON, Icons.add);
-            putValue(SHORT_DESCRIPTION, "Reset the Placed status for every placement in the job.");
+            putValue(SHORT_DESCRIPTION, Translations.getString("JobPanel.Action.Job.ResetAllPlaced.Description")); //$NON-NLS-1$
         }
 
         @Override
@@ -1115,9 +1116,9 @@ public class JobPanel extends JPanel {
 
     public final Action addBoardAction = new AbstractAction() {
         {
-            putValue(NAME, "Add Board...");
+            putValue(NAME, Translations.getString("JobPanel.Action.Job.AddBoard")); //$NON-NLS-1$
             putValue(SMALL_ICON, Icons.add);
-            putValue(SHORT_DESCRIPTION, "Add a new or existing board to the job.");
+            putValue(SHORT_DESCRIPTION, Translations.getString("JobPanel.Action.Job.AddBoard.Description")); //$NON-NLS-1$
             putValue(MNEMONIC_KEY, KeyEvent.VK_A);
         }
 
@@ -1127,24 +1128,24 @@ public class JobPanel extends JPanel {
 
     public final Action addNewBoardAction = new AbstractAction() {
         {
-            putValue(NAME, "New Board...");
-            putValue(SHORT_DESCRIPTION, "Create a new board and add it to the job.");
+            putValue(NAME, Translations.getString("JobPanel.Action.Job.AddBoard.NewBoard")); //$NON-NLS-1$
+            putValue(SHORT_DESCRIPTION, Translations.getString("JobPanel.Action.Job.AddBoard.NewBoard.Description")); //$NON-NLS-1$
             putValue(MNEMONIC_KEY, KeyEvent.VK_N);
         }
 
         @Override
         public void actionPerformed(ActionEvent arg0) {
-        	fileDialog.setDialogTitle("Save New Board As...");
+        	fileDialog.setDialogTitle("Save New Board As..."); //$NON-NLS-1$
         	fileDialog.resetChoosableFileFilters();
             fileDialog.setFileFilter(new FileFilter() {
     			@Override
     			public boolean accept(File f) {
-    				return f.isDirectory() | f.getName().toLowerCase().endsWith("board.xml");
+    				return f.isDirectory() | f.getName().toLowerCase().endsWith("board.xml"); //$NON-NLS-1$
     			}
 
     			@Override
     			public String getDescription() {
-    				return "Board files (.board.xml)";
+    				return "Board files (.board.xml)"; //$NON-NLS-1$
     			}
             });
             
@@ -1156,8 +1157,8 @@ public class JobPanel extends JPanel {
 
             try {
                 File file = fileDialog.getSelectedFile();
-                if (!file.getName().toLowerCase().endsWith(".board.xml")) {
-                    file = new File(file.getParent(), file.getName() + ".board.xml");
+                if (!file.getName().toLowerCase().endsWith(".board.xml")) { //$NON-NLS-1$
+                    file = new File(file.getParent(), file.getName() + ".board.xml"); //$NON-NLS-1$
                 }
 
                 Board board = configuration.getBoard(file);
@@ -1169,7 +1170,7 @@ public class JobPanel extends JPanel {
             }
             catch (Exception e) {
                 e.printStackTrace();
-                MessageBoxes.errorBox(frame, "Unable to create new board", e.getMessage());
+                MessageBoxes.errorBox(frame, "Unable to create new board", e.getMessage()); //$NON-NLS-1$
             }
             updatePanelizationIconState();
         }
@@ -1177,24 +1178,24 @@ public class JobPanel extends JPanel {
 
     public final Action addExistingBoardAction = new AbstractAction() {
         {
-            putValue(NAME, "Existing Board...");
-            putValue(SHORT_DESCRIPTION, "Add an existing board to the job.");
+            putValue(NAME, Translations.getString("JobPanel.Action.Job.AddBoard.ExistingBoard")); //$NON-NLS-1$
+            putValue(SHORT_DESCRIPTION, Translations.getString("JobPanel.Action.Job.AddBoard.ExistingBoard.Description")); //$NON-NLS-1$
             putValue(MNEMONIC_KEY, KeyEvent.VK_E);
         }
 
         @Override
         public void actionPerformed(ActionEvent arg0) {
-        	fileDialog.setDialogTitle("Open Board...");
+        	fileDialog.setDialogTitle("Open Board..."); //$NON-NLS-1$
         	fileDialog.resetChoosableFileFilters();
             fileDialog.setFileFilter(new FileFilter() {
 				@Override
 				public boolean accept(File f) {
-					return f.isDirectory() | f.getName().toLowerCase().endsWith("board.xml");
+					return f.isDirectory() | f.getName().toLowerCase().endsWith("board.xml"); //$NON-NLS-1$
 				}
 
 				@Override
 				public String getDescription() {
-					return "Board files (.board.xml)";
+					return "Board files (.board.xml)"; //$NON-NLS-1$
 				}
             });
             
@@ -1215,17 +1216,17 @@ public class JobPanel extends JPanel {
             }
             catch (Exception e) {
                 e.printStackTrace();
-                MessageBoxes.errorBox(frame, "Board load failed", e.getMessage());
+                MessageBoxes.errorBox(frame, "Board load failed", e.getMessage()); //$NON-NLS-1$
             }
             updatePanelizationIconState();
         }
     };
 
-    public final Action removeBoardAction = new AbstractAction("Remove Board") {
+    public final Action removeBoardAction = new AbstractAction("Remove Board") { //$NON-NLS-1$
         {
             putValue(SMALL_ICON, Icons.delete);
-            putValue(NAME, "Remove Board");
-            putValue(SHORT_DESCRIPTION, "Remove the selected board from the job.");
+            putValue(NAME, Translations.getString("JobPanel.Action.Job.RemoveBoard")); //$NON-NLS-1$
+            putValue(SHORT_DESCRIPTION, Translations.getString("JobPanel.Action.Job.RemoveBoard.Description")); //$NON-NLS-1$
             putValue(MNEMONIC_KEY, KeyEvent.VK_R);
         }
 
@@ -1253,9 +1254,9 @@ public class JobPanel extends JPanel {
     public final Action captureCameraBoardLocationAction = new AbstractAction() {
         {
             putValue(SMALL_ICON, Icons.captureCamera);
-            putValue(NAME, "Capture Camera Location");
+            putValue(NAME, "Capture Camera Location"); //$NON-NLS-1$
             putValue(SHORT_DESCRIPTION,
-                    "Set the board's location to the camera's current position.");
+                    "Set the board's location to the camera's current position."); //$NON-NLS-1$
         }
 
         @Override
@@ -1275,8 +1276,8 @@ public class JobPanel extends JPanel {
     public final Action captureToolBoardLocationAction = new AbstractAction() {
         {
             putValue(SMALL_ICON, Icons.captureTool);
-            putValue(NAME, "Capture Tool Location");
-            putValue(SHORT_DESCRIPTION, "Set the board's location to the tool's current position.");
+            putValue(NAME, "Capture Tool Location"); //$NON-NLS-1$
+            putValue(SHORT_DESCRIPTION, "Set the board's location to the tool's current position."); //$NON-NLS-1$
         }
 
         @Override
@@ -1290,11 +1291,11 @@ public class JobPanel extends JPanel {
     };
 
     public final Action moveCameraToBoardLocationAction =
-            new AbstractAction("Move Camera To Board Location") {
+            new AbstractAction("Move Camera To Board Location") { //$NON-NLS-1$
                 {
                     putValue(SMALL_ICON, Icons.centerCamera);
-                    putValue(NAME, "Move Camera To Board Location");
-                    putValue(SHORT_DESCRIPTION, "Position the camera at the board's location.");
+                    putValue(NAME, "Move Camera To Board Location"); //$NON-NLS-1$
+                    putValue(SHORT_DESCRIPTION, "Position the camera at the board's location."); //$NON-NLS-1$
                 }
 
                 @Override
@@ -1309,12 +1310,12 @@ public class JobPanel extends JPanel {
                 }
             };
     public final Action moveCameraToBoardLocationNextAction =
-            new AbstractAction("Move Camera To Board Location") {
+            new AbstractAction("Move Camera To Board Location") { //$NON-NLS-1$
                 {
                     putValue(SMALL_ICON, Icons.centerCameraMoveNext);
-                    putValue(NAME, "Move Camera To Board Location and Move to the Next Board");
+                    putValue(NAME, "Move Camera to the Next Board"); //$NON-NLS-1$
                     putValue(SHORT_DESCRIPTION,
-                            "Position the camera at the board's location and move to the next board.");
+                            "Position the camera at the next board's location."); //$NON-NLS-1$
                 }
 
                 @Override
@@ -1323,16 +1324,16 @@ public class JobPanel extends JPanel {
                         // Need to keep current focus owner so that the space bar can be
                         // used after the initial click. Otherwise, button focus is lost
                         // when table is updated
-                        Component comp = MainFrame.get().getFocusOwner();
-                        HeadMountable tool = MainFrame.get().getMachineControls().getSelectedTool();
+                    	Component comp = MainFrame.get().getFocusOwner();
+                    	Helpers.selectNextTableRow(boardLocationsTable);
+                    	comp.requestFocus();
+                       HeadMountable tool = MainFrame.get().getMachineControls().getSelectedTool();
                         Camera camera = tool.getHead().getDefaultCamera();
                         MainFrame.get().getCameraViews().ensureCameraVisible(camera);
                         Location location = getSelectedBoardLocation().getLocation();
+                        
                         MovableUtils.moveToLocationAtSafeZ(camera, location);
-                        Helpers.selectNextTableRow(boardLocationsTable);
-                        if (comp != null) {
-                            comp.requestFocus();
-                        }
+                       
                     });
                 }
             };
@@ -1340,8 +1341,8 @@ public class JobPanel extends JPanel {
     public final Action moveToolToBoardLocationAction = new AbstractAction() {
         {
             putValue(SMALL_ICON, Icons.centerTool);
-            putValue(NAME, "Move Tool To Board Location");
-            putValue(SHORT_DESCRIPTION, "Position the tool at the board's location.");
+            putValue(NAME, "Move Tool To Board Location"); //$NON-NLS-1$
+            putValue(SHORT_DESCRIPTION, "Position the tool at the board's location."); //$NON-NLS-1$
         }
 
         @Override
@@ -1357,9 +1358,9 @@ public class JobPanel extends JPanel {
     public final Action twoPointLocateBoardLocationAction = new AbstractAction() {
         {
             putValue(SMALL_ICON, Icons.twoPointLocate);
-            putValue(NAME, "Two Point Board Location");
+            putValue(NAME, "Two Point Board Location"); //$NON-NLS-1$
             putValue(SHORT_DESCRIPTION,
-                    "Set the board's location and rotation using two placements.");
+                    "Set the board's location and rotation using two placements."); //$NON-NLS-1$
         }
 
         @Override
@@ -1373,9 +1374,9 @@ public class JobPanel extends JPanel {
     public final Action fiducialCheckAction = new AbstractAction() {
         {
             putValue(SMALL_ICON, Icons.fiducialCheck);
-            putValue(NAME, "Fiducial Check");
+            putValue(NAME, "Fiducial Check"); //$NON-NLS-1$
             putValue(SHORT_DESCRIPTION,
-                    "Perform a fiducial check for the board and update it's location and rotation.");
+                    "Perform a fiducial check for the board and update it's location and rotation."); //$NON-NLS-1$
         }
 
         @Override
@@ -1396,8 +1397,8 @@ public class JobPanel extends JPanel {
     public final Action panelizeAction = new AbstractAction() {
         {
             putValue(SMALL_ICON, Icons.autoPanelize);
-            putValue(NAME, "Panelize Board");
-            putValue(SHORT_DESCRIPTION, "Autopanelize the loaded board into an array");
+            putValue(NAME, "Panelize Board"); //$NON-NLS-1$
+            putValue(SHORT_DESCRIPTION, "Autopanelize the loaded board into an array"); //$NON-NLS-1$
         }
 
         @Override
@@ -1405,8 +1406,8 @@ public class JobPanel extends JPanel {
 
             if (job.isUsingPanel() == false) {
                 if (job.getBoardLocations().size() > 1) {
-                    MessageBoxes.errorBox(frame, "Panelize Error",
-                            "Panelization can only occur on a single board.");
+                    MessageBoxes.errorBox(frame, "Panelize Error", //$NON-NLS-1$
+                            "Panelization can only occur on a single board."); //$NON-NLS-1$
                     return;
                 }
             }
@@ -1419,8 +1420,8 @@ public class JobPanel extends JPanel {
     public final Action panelizeXOutAction = new AbstractAction() {
         {
             putValue(SMALL_ICON, Icons.autoPanelizeXOut);
-            putValue(NAME, "Xout Panelized");
-            putValue(SHORT_DESCRIPTION, "Skip certain PCBs on Panelized Boards");
+            putValue(NAME, "Xout Panelized"); //$NON-NLS-1$
+            putValue(SHORT_DESCRIPTION, "Skip certain PCBs on Panelized Boards"); //$NON-NLS-1$
         }
 
         @Override
@@ -1433,9 +1434,9 @@ public class JobPanel extends JPanel {
     public final Action panelizeFiducialCheck = new AbstractAction() {
         {
             putValue(SMALL_ICON, Icons.autoPanelizeFidCheck);
-            putValue(NAME, "Panelized Fid Check");
+            putValue(NAME, "Panelized Fid Check"); //$NON-NLS-1$
             putValue(SHORT_DESCRIPTION,
-                    "Perform a fiducial check on a panel and update its position and rotation");
+                    "Perform a fiducial check on a panel and update its position and rotation"); //$NON-NLS-1$
         }
 
         @Override
@@ -1482,7 +1483,7 @@ public class JobPanel extends JPanel {
             }
             catch (Exception e) {
                 e.printStackTrace();
-                MessageBoxes.errorBox(frame, "Job Load Error", e.getMessage());
+                MessageBoxes.errorBox(frame, "Job Load Error", e.getMessage()); //$NON-NLS-1$
             }
         }
     }

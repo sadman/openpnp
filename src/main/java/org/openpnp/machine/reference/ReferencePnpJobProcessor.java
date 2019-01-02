@@ -58,6 +58,7 @@ import org.openpnp.util.Utils2D;
 import org.openpnp.util.VisionUtils;
 import org.pmw.tinylog.Logger;
 import org.simpleframework.xml.Attribute;
+import org.simpleframework.xml.Element;
 import org.simpleframework.xml.Root;
 
 @Root
@@ -86,6 +87,11 @@ public class ReferencePnpJobProcessor extends AbstractPnpJobProcessor {
         Reset
     }
 
+    public enum JobOrderHint {
+        PartHeight,
+        Part
+    }
+
     public static class PlannedPlacement {
         public final JobPlacement jobPlacement;
         public final Nozzle nozzle;
@@ -109,6 +115,18 @@ public class ReferencePnpJobProcessor extends AbstractPnpJobProcessor {
 
     @Attribute(required = false)
     protected boolean parkWhenComplete = false;
+    
+    @Element(required = false)
+    protected boolean autoSaveJob = true;
+    
+    @Element(required = false)
+    boolean autoSaveConfiguration = true;
+    
+    @Element(required = false)
+    long configSaveFrequencyMs = (10 * 60 * 1000);
+
+    @Attribute(required = false)
+    protected JobOrderHint jobOrder = JobOrderHint.PartHeight;
 
     private FiniteStateMachine<State, Message> fsm = new FiniteStateMachine<>(State.Uninitialized);
 
@@ -124,7 +142,9 @@ public class ReferencePnpJobProcessor extends AbstractPnpJobProcessor {
 
     long startTime;
     int totalPartsPlaced;
-
+    
+    long lastConfigSavedTimeMs = 0;
+    
     public ReferencePnpJobProcessor() {
         fsm.add(State.Uninitialized, Message.Initialize, State.PreFlight, this::doInitialize);
 
@@ -274,6 +294,7 @@ public class ReferencePnpJobProcessor extends AbstractPnpJobProcessor {
     protected void doPreFlight() throws Exception {
         startTime = System.currentTimeMillis();
         totalPartsPlaced = 0;
+        saveJobAndConfig(true);
         
         // Create some shortcuts for things that won't change during the run
         this.machine = Configuration.get().getMachine();
@@ -426,10 +447,20 @@ public class ReferencePnpJobProcessor extends AbstractPnpJobProcessor {
 
         fireTextStatus("Planning placements.");
 
-        // Get the list of unfinished placements and sort them by part height.
-        List<JobPlacement> jobPlacements = getPendingJobPlacements().stream()
-                .sorted(Comparator.comparing(JobPlacement::getPartHeight))
-                .collect(Collectors.toList());
+        List<JobPlacement> jobPlacements;
+
+        if (this.jobOrder.equals(JobOrderHint.Part)) {
+        	// Get the list of unfinished placements and sort them by part.
+	        	jobPlacements = getPendingJobPlacements().stream()
+	        			.sorted(Comparator.comparing(JobPlacement::getPartId))
+	        			.collect(Collectors.toList());
+        } 
+        else {
+        	// Get the list of unfinished placements and sort them by part height.
+	        	jobPlacements = getPendingJobPlacements().stream()
+	        			.sorted(Comparator.comparing(JobPlacement::getPartHeight))
+	        			.collect(Collectors.toList());
+        }
 
         if (jobPlacements.isEmpty()) {
             return;
@@ -619,8 +650,6 @@ public class ReferencePnpJobProcessor extends AbstractPnpJobProcessor {
             fireTextStatus("Picking %s from %s for %s.", part.getId(), feeder.getName(),
                     placement.getId());
             
-            ++totalPartsPlaced;
-
             // Pick
             nozzle.pick(part);
 
@@ -770,6 +799,8 @@ public class ReferencePnpJobProcessor extends AbstractPnpJobProcessor {
             
             // Mark the placement as "placed"
             boardLocation.setPlaced(jobPlacement.placement.getId(), true);
+            
+            ++totalPartsPlaced;
 
             plannedPlacement.stepComplete = true;
 
@@ -782,7 +813,7 @@ public class ReferencePnpJobProcessor extends AbstractPnpJobProcessor {
 	            params.put("placement", placement);
 	            params.put("boardLocation", boardLocation);
 	            params.put("placementLocation", placementLocation);
-            Configuration.get().getScripting().on("Job.Placement.Complete", params);
+	            Configuration.get().getScripting().on("Job.Placement.Complete", params);
 	        }
 	        catch (Exception e) {
 	            Logger.warn(e);
@@ -790,11 +821,7 @@ public class ReferencePnpJobProcessor extends AbstractPnpJobProcessor {
             
             Logger.debug("Place {} with {}", part, nozzle.getName());
 
-            File file = job.getFile();
-            if (file != null) {
-                Configuration.get().saveJob(job, file);
-            }
-            Configuration.get().save();
+            saveJobAndConfig(false);
         }
 
         clearStepComplete();
@@ -828,8 +855,10 @@ public class ReferencePnpJobProcessor extends AbstractPnpJobProcessor {
         Configuration.get().getScripting().on("Job.Finished", params);
         
         fireTextStatus("Job finished - placed %s parts in %s sec. (%s CPH)", totalPartsPlaced, df.format(dtSec), df.format(totalPartsPlaced / (dtSec / 3600.0)));
+     
+        saveJobAndConfig(true);
     }
-
+    
     protected void doReset() throws Exception {
         this.job = null;
     }
@@ -928,17 +957,47 @@ public class ReferencePnpJobProcessor extends AbstractPnpJobProcessor {
         this.parkWhenComplete = parkWhenComplete;
     }
     
-    public List<JobPlacement> getJobPlacementsById(String id) { 
-        return jobPlacements.stream().filter((jobPlacement) -> {
-            return jobPlacement.toString() == id;
-        }).collect(Collectors.toList()); 
-    } 
-    
-    public List<JobPlacement> getJobPlacementsById(String id, Status status) {
-        return jobPlacements.stream().filter((jobPlacement) -> {
-            return jobPlacement.toString() == id && jobPlacement.status == status;
-        }).collect(Collectors.toList());
+    public boolean isAutoSaveJob() {
+        return autoSaveJob;
     }
+
+    public void setAutoSaveJob(boolean autoSaveJob) {
+        this.autoSaveJob = autoSaveJob;
+    }
+
+    public boolean isAutoSaveConfiguration() {
+        return autoSaveConfiguration;
+    }
+
+    public void setAutoSaveConfiguration(boolean autoSaveConfiguration) {
+        this.autoSaveConfiguration = autoSaveConfiguration;
+    }
+    
+    public JobOrderHint getJobOrder() {
+        return jobOrder;
+    }
+    
+    public void setJobOrder(JobOrderHint newJobOrder) {
+        this.jobOrder = newJobOrder;
+    }    
+
+    private void saveJobAndConfig(boolean ignoreTimer) throws Exception {
+        Logger.info("saveJobAndConfig({})", ignoreTimer);
+        if (autoSaveJob) {
+            Logger.info("Auto saving job.");
+            File file = job.getFile();
+            if (file != null) {
+                Configuration.get().saveJob(job, file);
+            }
+        }
+        if (autoSaveConfiguration && (ignoreTimer || System.currentTimeMillis() > lastConfigSavedTimeMs + configSaveFrequencyMs)) {
+            Logger.info("Auto saving config.");
+            Configuration.get().save();
+            lastConfigSavedTimeMs = System.currentTimeMillis();
+        }
+    }
+    
+    
 
     // Sort a List<JobPlacement> by the number of nulls it contains in ascending order.
     Comparator<List<JobPlacement>> byFewestNulls = (a, b) -> {

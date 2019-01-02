@@ -1,6 +1,70 @@
 This file lists major or notable changes to OpenPnP in chronological order. This is not
 a complete change list, only those that may directly interest or affect users.
 
+# 2018-12-08
+
+* Serial Library Change
+
+    The library that OpenPnP uses to communicate with serial ports, jSSC, has become out of date and is
+    unmaintained, so we're trying a new library. The new library is jSerialComm:
+    https://github.com/Fazecast/jSerialComm.
+	
+	This change should not affect existing users, so if you notice new problems with serial port access,
+	please file an issue or post to the mailing list.    
+    
+
+# 2018-11-17
+
+* OpenCV 3.4.2 Upgraded
+
+	The bug in the OpenCV library has been fixed so once again OpenPnP is upgraded to OpenCV 3.4.2.
+	
+* OpenPnP Compatible with Java 9, 10, 11.
+
+	With the upgrade of OpenCV OpenPnP is now compatible with all versions of Java after 8. This includes
+	Java 8, 9, 10, and 11. 
+
+# 2018-10-31
+
+* OpenCV 3.4.2 Upgrade Reverted
+
+	The OpenCV upgrade has temporarily been reverted due to an issue found in the OpenCV library
+	during testing:
+	
+	https://github.com/openpnp/opencv/issues/38
+	
+	Once this issue is resolved, this patch will be re-added.
+	
+# 2018-09-26
+
+* Connection Keep Alive
+
+	Thank you to @markmaker for PR https://github.com/openpnp/openpnp/pull/767 which adds a keep
+	alive option to the drive communications configuration. This option, which is on by default,
+	can be turned off to cause OpenPnP to close the serial port or TCP port when clicking the
+	disable button. This makes it possible to connect to the serial port from another program
+	without having to exit OpenPnP.
+	
+	Note, again, that this option is on by default which is the pre-existing behavior. You can turn
+	it off if you want the new behavior.
+	 
+# 2018-09-10
+
+* Nozzle Offset Setup Wizard
+
+	There's a new nozzle offset setup wizard in the Nozzle setup area that now makes it very easy to
+	setup nozzle offsets. This is one of the more confusing aspects of setting up OpenPnP and the new
+	wizard makes it very easy. Many thanks to @pfried for this new feature!
+	
+	See https://github.com/openpnp/openpnp/pull/765 for more information.
+
+# 2018-08-18
+
+* Placements Comments
+
+	The Placements table (Pick and Place) now contains a user editable Comments column that is
+	saved in the board file for each Placement.
+	
 # 2018-08-04
 
 * OpenCV Upgraded to 3.4.2

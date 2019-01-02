@@ -162,7 +162,6 @@ public class JobPlacementsPanel extends JPanel {
         table.setDefaultRenderer(Part.class, new IdentifiableTableCellRenderer<Part>());
         table.setDefaultRenderer(PlacementsTableModel.Status.class, new StatusRenderer());
         table.setDefaultRenderer(Placement.Type.class, new TypeRenderer());
-        table.setDefaultRenderer(PartCellValue.class, new IdRenderer());
         tableModel.setJobPlacementsPanel(this);
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             @Override
@@ -260,6 +259,8 @@ public class JobPlacementsPanel extends JPanel {
         }
     }
     
+    // TODO STOPSHIP This is called all over the place and it's likely to rot - need to find
+    // a listener or something it can use.
     public void updateActivePlacements() {
         int activePlacements = 0;
         int totalActivePlacements = 0;
@@ -280,7 +281,7 @@ public class JobPlacementsPanel extends JPanel {
             blActivePlacements = boardLocation.getActivePlacements();
         }
         
-        MainFrame.get().setPlacements(totalActivePlacements - activePlacements, 
+        MainFrame.get().setPlacementCompletionStatus(totalActivePlacements - activePlacements, 
                 totalActivePlacements, 
                 blTotalActivePlacements - blActivePlacements, 
                 blTotalActivePlacements);
@@ -413,9 +414,9 @@ public class JobPlacementsPanel extends JPanel {
     public final Action moveCameraToPlacementLocationNext = new AbstractAction() {
         {
             putValue(SMALL_ICON, Icons.centerCameraMoveNext);
-            putValue(NAME, "Move Camera To Placement Location and Move to Next Part");
+            putValue(NAME, "Move Camera To Next Placement Location ");
             putValue(SHORT_DESCRIPTION,
-                    "Position the camera at the placement's location and move to next part.");
+                    "Position the camera at the next placements location.");
         }
 
         @Override
@@ -424,16 +425,15 @@ public class JobPlacementsPanel extends JPanel {
                 // Need to keep current focus owner so that the space bar can be
                 // used after the initial click. Otherwise, button focus is lost
                 // when table is updated
-                Component comp = MainFrame.get().getFocusOwner();
-                Location location = Utils2D.calculateBoardPlacementLocation(boardLocation,
+               	Component comp = MainFrame.get().getFocusOwner();
+               	Helpers.selectNextTableRow(table);
+                comp.requestFocus();
+               	Location location = Utils2D.calculateBoardPlacementLocation(boardLocation,
                         getSelection().getLocation());
                 Camera camera = MainFrame.get().getMachineControls().getSelectedTool().getHead()
                         .getDefaultCamera();
                 MovableUtils.moveToLocationAtSafeZ(camera, location);
-                Helpers.selectNextTableRow(table);
-                if (comp != null) {
-                    comp.requestFocus();
-                }
+                
             });
         };
     };
@@ -653,55 +653,6 @@ public class JobPlacementsPanel extends JPanel {
                 setBackground(statusColorError);
                 setText(status.toString());
             }
-        }
-    }
-
-    class IdRenderer extends DefaultTableCellRenderer {
-        // This is used just to set background color on Id cell when selected.
-        // Could not find another way to do this in.
-        public Component getTableCellRendererComponent(JTable table, Object value,
-                boolean isSelected, boolean hasFocus, int row, int column) {
-            super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-
-            if (isSelected) {
-                setBackground(cellColorSelected);
-                setForeground(Color.WHITE);
-            }
-            return this;
-        }
-
-        public void setValue(Object value) {
-            String id = value.toString();
-
-            PnpJobProcessor pnpJobProcessor = Configuration.get().getMachine().getPnpJobProcessor();
-            int totalSize = pnpJobProcessor.getJobPlacementsById(id).size();
-            int completeSize =
-                    pnpJobProcessor.getJobPlacementsById(id, JobPlacement.Status.Complete).size();
-            int processingSize =
-                    pnpJobProcessor.getJobPlacementsById(id, JobPlacement.Status.Processing).size();
-
-            //
-            if (totalSize != 0) {
-                if (completeSize == totalSize) {
-                    setBackground(jobColorComplete);
-                }
-                else if (processingSize > 0) {
-                    setBackground(jobColorProcessing);
-                }
-                else {
-                    setBackground(jobColorPending);
-                }
-
-                if (totalSize > 1) {
-                    id += "  (" + completeSize + " / " + totalSize + ")";
-                }
-            }
-            else {
-                setBackground(Color.WHITE);
-            }
-
-            setForeground(Color.black);
-            setText(id);
         }
     }
 }
