@@ -983,6 +983,9 @@ public class MainFrame extends JFrame {
     };
 
     private Action saveConfigAction = new AbstractAction(Translations.getString("Menu.File.SaveConfiguration")) { //$NON-NLS-1$
+        {
+            putValue(MNEMONIC_KEY, KeyEvent.VK_C);
+        }
         @Override
         public void actionPerformed(ActionEvent arg0) {
 			saveConfig();

@@ -1042,6 +1042,7 @@ public class JobPanel extends JPanel {
 
     public final Action startPauseResumeJobAction = new AbstractAction() {
         {
+            putValue(MNEMONIC_KEY, KeyEvent.VK_S);
             putValue(SMALL_ICON, Icons.start);
             putValue(NAME, Translations.getString("JobPanel.Action.Job.Start")); //$NON-NLS-1$
             putValue(SHORT_DESCRIPTION, Translations.getString("JobPanel.Action.Job.Start.Description")); //$NON-NLS-1$
@@ -1100,6 +1101,7 @@ public class JobPanel extends JPanel {
     
     public final Action resetAllPlacedAction = new AbstractAction() {
         {
+            putValue(MNEMONIC_KEY, KeyEvent.VK_R);
             putValue(NAME, Translations.getString("JobPanel.Action.Job.ResetAllPlaced")); //$NON-NLS-1$
 //            putValue(SMALL_ICON, Icons.add);
             putValue(SHORT_DESCRIPTION, Translations.getString("JobPanel.Action.Job.ResetAllPlaced.Description")); //$NON-NLS-1$
