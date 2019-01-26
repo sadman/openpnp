@@ -108,6 +108,9 @@ public class StripFeederS extends ReferenceFeeder {
     @Attribute
     private int feedCount = 0;
 
+    @Attribute(required = false)
+    private int capacity = -1;
+
     private Length holeDiameter = new Length(1.5, LengthUnit.Millimeters);
 
     private Length holePitch = new Length(4, LengthUnit.Millimeters);
@@ -222,6 +225,10 @@ public class StripFeederS extends ReferenceFeeder {
     }
 
     public void feed(Nozzle nozzle) throws Exception {
+        if (capacity != -1 && feedCount >= capacity) {
+            throw new Exception("No more parts available.");
+        }
+
         updateVisionOffsets(nozzle);
     }
 
@@ -368,6 +375,14 @@ public class StripFeederS extends ReferenceFeeder {
         firePropertyChange("feedCount", oldValue, feedCount);
     }
 
+    public int getCapacity() {
+        return capacity;
+    }
+
+    public void setCapacity(int capacity) {
+        this.capacity = capacity;
+    }
+
     public Length getReferenceHoleToPartLinear() {
         return referenceHoleToPartLinear;
     }
@@ -388,7 +403,7 @@ public class StripFeederS extends ReferenceFeeder {
         return reverse;
     }
 
-    public void setReverse(boolean feedAfterPick) {
+    public void setReverse(boolean reverse) {
         this.reverse = reverse;
     }
 

@@ -89,6 +89,7 @@ public class StripFeederSConfigurationWizard extends AbstractConfigurationWizard
     private JTextField textFieldFeedEndY;
     private JTextField textFieldFeedEndZ;
     private JTextField textFieldTapeWidth;
+    private JTextField textFieldCapacity;
     private JLabel lblPartPitch;
     private JTextField textFieldPartPitch;
     private JPanel panelTapeSettings;
@@ -205,6 +206,13 @@ public class StripFeederSConfigurationWizard extends AbstractConfigurationWizard
         textFieldTapeWidth = new JTextField();
         panelTapeSettings.add(textFieldTapeWidth, "10, 4");
         textFieldTapeWidth.setColumns(5);
+
+        JLabel lblCapacity = new JLabel("Capacity");
+        panelTapeSettings.add(lblCapacity, "12, 4, right, default");
+
+        textFieldCapacity = new JTextField();
+        panelTapeSettings.add(textFieldCapacity, "14, 4");
+        textFieldCapacity.setColumns(5);
 
         lblPartPitch = new JLabel("Part Pitch");
         panelTapeSettings.add(lblPartPitch, "2, 6, right, default");
@@ -359,6 +367,7 @@ public class StripFeederSConfigurationWizard extends AbstractConfigurationWizard
         addWrappedBinding(feeder, "tapeType", comboBoxTapeType, "selectedItem");
 
         addWrappedBinding(feeder, "tapeWidth", textFieldTapeWidth, "text", lengthConverter);
+        addWrappedBinding(feeder, "capacity", textFieldCapacity, "text", intConverter);
         addWrappedBinding(feeder, "partPitch", textFieldPartPitch, "text", lengthConverter);
         addWrappedBinding(feeder, "feedCount", textFieldFeedCount, "text", intConverter);
 
@@ -383,6 +392,7 @@ public class StripFeederSConfigurationWizard extends AbstractConfigurationWizard
 
         ComponentDecorators.decorateWithAutoSelect(textFieldLocationRotation);
         ComponentDecorators.decorateWithAutoSelectAndLengthConversion(textFieldTapeWidth);
+        ComponentDecorators.decorateWithAutoSelect(textFieldCapacity);
         ComponentDecorators.decorateWithAutoSelect(retryCountTf);
         ComponentDecorators.decorateWithAutoSelectAndLengthConversion(textFieldPartPitch);
         ComponentDecorators.decorateWithAutoSelect(textFieldFeedCount);
