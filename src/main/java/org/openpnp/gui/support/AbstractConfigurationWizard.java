@@ -22,6 +22,7 @@ package org.openpnp.gui.support;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -169,6 +170,10 @@ public abstract class AbstractConfigurationWizard extends JPanel implements Wiza
     }
 
     protected Action applyAction = new AbstractAction("Apply") {
+        {
+            putValue(MNEMONIC_KEY, KeyEvent.VK_A);
+        }
+
         @Override
         public void actionPerformed(ActionEvent arg0) {
             saveToModel();
