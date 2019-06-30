@@ -48,20 +48,17 @@ import javax.swing.event.ChangeListener;
 import org.openpnp.ConfigurationListener;
 import org.openpnp.Translations;
 import org.openpnp.gui.support.Icons;
-import org.openpnp.model.Board;
+import org.openpnp.gui.support.WrapLayout;
 import org.openpnp.model.BoardLocation;
 import org.openpnp.model.Configuration;
-import org.openpnp.model.Job;
 import org.openpnp.model.Length;
 import org.openpnp.model.LengthUnit;
 import org.openpnp.model.Location;
-import org.openpnp.model.Point;
 import org.openpnp.spi.Actuator;
 import org.openpnp.spi.Head;
 import org.openpnp.spi.HeadMountable;
 import org.openpnp.spi.Machine;
 import org.openpnp.spi.Nozzle;
-import org.openpnp.spi.PasteDispenser;
 import org.openpnp.util.BeanUtils;
 import org.openpnp.util.MovableUtils;
 import org.openpnp.util.UiUtils;
@@ -81,7 +78,6 @@ public class JogControlsPanel extends JPanel {
     private final MachineControlsPanel machineControlsPanel;
     private final Configuration configuration;
     private JPanel panelActuators;
-    private JPanel panelDispensers;
     private JSlider sliderIncrements;
     private JCheckBox boardProtectionOverrideCheck;
 
@@ -115,9 +111,6 @@ public class JogControlsPanel extends JPanel {
         zParkAction.setEnabled(enabled);
         cParkAction.setEnabled(enabled);
         for (Component c : panelActuators.getComponents()) {
-            c.setEnabled(enabled);
-        }
-        for (Component c : panelDispensers.getComponents()) {
             c.setEnabled(enabled);
         }
     }
@@ -274,20 +267,6 @@ public class JogControlsPanel extends JPanel {
         double gamma = 1.0 - alpha - beta;
 
         return (alpha > 0.0) && (beta > 0.0) && (gamma > 0.0);
-    }
-
-    private void park(boolean xy, boolean z, boolean c) {
-        UiUtils.submitUiMachineTask(() -> {
-            HeadMountable tool = machineControlsPanel.getSelectedTool();
-            Location location = tool.getLocation();
-            Location parkLocation = tool.getHead()
-                                        .getParkLocation();
-            parkLocation = parkLocation.convertToUnits(location.getUnits());
-            location = location.derive(xy ? parkLocation.getX() : null,
-                    xy ? parkLocation.getY() : null, z ? parkLocation.getZ() : null,
-                    c ? parkLocation.getRotation() : null);
-            MovableUtils.moveToLocationAtSafeZ(tool, location);
-        });
     }
 
     private void createUi() {
@@ -455,13 +434,8 @@ public class JogControlsPanel extends JPanel {
 
         panelActuators = new JPanel();
         tabbedPane_1.addTab(Translations.getString("JogControlsPanel.Tab.Actuators"), null, panelActuators, null); //$NON-NLS-1$
-        panelActuators.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
+        panelActuators.setLayout(new WrapLayout(WrapLayout.LEFT));
 
-        panelDispensers = new JPanel();
-        tabbedPane_1.addTab(Translations.getString("JogControlsPanel.Tab.Dispense"), null, panelDispensers, null); //$NON-NLS-1$
-        FlowLayout flowLayout = (FlowLayout) panelDispensers.getLayout();
-        flowLayout.setAlignment(FlowLayout.LEFT);
-        
         JPanel panelSafety = new JPanel();
         tabbedPane_1.addTab(Translations.getString("JogControlsPanel.Tab.Safety"), null, panelSafety, null); //$NON-NLS-1$
         panelSafety.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
@@ -575,7 +549,9 @@ public class JogControlsPanel extends JPanel {
     public Action xyParkAction = new AbstractAction(Translations.getString("JogControlsPanel.Action.ParkXY"), Icons.park) { //$NON-NLS-1$
         @Override
         public void actionPerformed(ActionEvent arg0) {
-            park(true, false, false);
+            UiUtils.submitUiMachineTask(() -> {
+                MovableUtils.park(machineControlsPanel.getSelectedTool().getHead());
+            });
         }
     };
 
@@ -583,7 +559,10 @@ public class JogControlsPanel extends JPanel {
     public Action zParkAction = new AbstractAction(Translations.getString("JogControlsPanel.Action.ParkZ"), Icons.park) { //$NON-NLS-1$
         @Override
         public void actionPerformed(ActionEvent arg0) {
-            park(false, true, false);
+            UiUtils.submitUiMachineTask(() -> {
+                HeadMountable hm = machineControlsPanel.getSelectedTool();
+                hm.moveToSafeZ();
+            });
         }
     };
 
@@ -591,7 +570,12 @@ public class JogControlsPanel extends JPanel {
     public Action cParkAction = new AbstractAction(Translations.getString("JogControlsPanel.Action.ParkC"), Icons.park) { //$NON-NLS-1$
         @Override
         public void actionPerformed(ActionEvent arg0) {
-            park(false, false, true);
+            UiUtils.submitUiMachineTask(() -> {
+                HeadMountable hm = machineControlsPanel.getSelectedTool();
+                Location location = hm.getLocation();
+                location = location.derive(null, null, null, 0.);
+                hm.moveTo(location);
+            });
         }
     };
 
@@ -725,17 +709,6 @@ public class JogControlsPanel extends JPanel {
             for (final Head head : machine.getHeads()) {
                 for (Actuator actuator : head.getActuators()) {
                     addActuator(actuator);
-                }
-                for (final PasteDispenser dispenser : head.getPasteDispensers()) {
-                    final JButton dispenserButton =
-                            new JButton(head.getName() + ":" + dispenser.getName()); //$NON-NLS-1$
-                    dispenserButton.setFocusable(false);
-                    dispenserButton.addActionListener((e) -> {
-                        UiUtils.submitUiMachineTask(() -> {
-                            dispenser.dispense(null, null, 250);
-                        });
-                    });
-                    panelDispensers.add(dispenserButton);
                 }
             }
 

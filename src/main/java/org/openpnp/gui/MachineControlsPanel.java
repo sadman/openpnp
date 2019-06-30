@@ -41,24 +41,25 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.border.TitledBorder;
 
+import org.jdesktop.beansbinding.AutoBinding.UpdateStrategy;
 import org.jdesktop.swingx.JXCollapsiblePane;
 import org.openpnp.ConfigurationListener;
 import org.openpnp.Translations;
+import org.openpnp.gui.support.ActuatorItem;
 import org.openpnp.gui.support.CameraItem;
 import org.openpnp.gui.support.HeadMountableItem;
 import org.openpnp.gui.support.Icons;
 import org.openpnp.gui.support.MessageBoxes;
 import org.openpnp.gui.support.NozzleItem;
-import org.openpnp.gui.support.PasteDispenserItem;
 import org.openpnp.model.Configuration;
 import org.openpnp.model.Location;
+import org.openpnp.spi.Actuator;
 import org.openpnp.spi.Camera;
 import org.openpnp.spi.Head;
 import org.openpnp.spi.HeadMountable;
 import org.openpnp.spi.Machine;
 import org.openpnp.spi.MachineListener;
 import org.openpnp.spi.Nozzle;
-import org.openpnp.spi.PasteDispenser;
 import org.openpnp.util.BeanUtils;
 import org.openpnp.util.MovableUtils;
 import org.openpnp.util.UiUtils;
@@ -115,18 +116,6 @@ public class MachineControlsPanel extends JPanel {
     }
 
 
-    public PasteDispenser getSelectedPasteDispenser() {
-        if (selectedTool instanceof PasteDispenser) {
-            return (PasteDispenser) selectedTool;
-        }
-        try {
-            return Configuration.get().getMachine().getDefaultHead().getDefaultPasteDispenser();
-        }
-        catch (Exception e) {
-            return null;
-        }
-    }
-
     /**
      * Currently returns the selected Nozzle. Intended to eventually return either the selected
      * Nozzle or PasteDispenser.
@@ -138,6 +127,7 @@ public class MachineControlsPanel extends JPanel {
     }
 
     public void setSelectedTool(HeadMountable hm) {
+        HeadMountable oldValue = selectedTool;
         selectedTool = hm;
         for (int i = 0; i < comboBoxHeadMountable.getItemCount(); i++) {
             HeadMountableItem item = (HeadMountableItem) comboBoxHeadMountable.getItemAt(i); 
@@ -147,6 +137,9 @@ public class MachineControlsPanel extends JPanel {
             }
         }
         updateDros();
+        if (oldValue != hm) {
+            firePropertyChange("selectedTool", oldValue, hm);
+        }
     }
 
     public JogControlsPanel getJogControlsPanel() {
@@ -270,10 +263,11 @@ public class MachineControlsPanel extends JPanel {
                 boolean enable = !machine.isEnabled();
                 try {
 					Configuration.get().getMachine().setEnabled(enable);
+					// TODO STOPSHIP move setEnabled into a binding.
 					setEnabled(true);
 					if (machine.getHomeAfterEnabled() && machine.isEnabled()) {
+                        // TODO STOPSHIP should not be in the UI
 						machine.home();
-		                homeAction.putValue(Action.SMALL_ICON, Icons.home);
 					}
                 }
                 catch (Exception t1) {
@@ -287,11 +281,14 @@ public class MachineControlsPanel extends JPanel {
         }
     };
 
-    @SuppressWarnings("serial")
-    public Action homeAction = new AbstractAction(Translations.getString("MachineControls.Action.Home"), Icons.home) { //$NON-NLS-1$
-        {
+    public class HomeAction extends AbstractAction {
+        public HomeAction() {
+            super(Translations.getString("MachineControls.Action.Home"), Icons.home);
             putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_BACK_QUOTE,
                     Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+        }
+        public void setHomed(boolean homed) {
+            putValue(Action.SMALL_ICON, homed ? Icons.home : Icons.homeWarning);
         }
 
         @Override
@@ -299,10 +296,10 @@ public class MachineControlsPanel extends JPanel {
             UiUtils.submitUiMachineTask(() -> {
                 Machine machine = Configuration.get().getMachine();
                 machine.home();
-                homeAction.putValue(Action.SMALL_ICON, Icons.home);
             });
         }
-    };
+    }
+    public HomeAction homeAction = new HomeAction();
 
     @SuppressWarnings("serial")
     public Action targetToolAction = new AbstractAction(null, Icons.centerTool) {
@@ -311,7 +308,7 @@ public class MachineControlsPanel extends JPanel {
             UiUtils.submitUiMachineTask(() -> {
                 HeadMountable tool = getSelectedTool();
                 Camera camera = tool.getHead().getDefaultCamera();
-                MovableUtils.moveToLocationAtSafeZ(tool, camera.getLocation());
+                MovableUtils.moveToLocationAtSafeZ(tool, camera.getLocation(tool));
             });
         }
     };
@@ -332,7 +329,6 @@ public class MachineControlsPanel extends JPanel {
         startStopMachineAction.putValue(Action.NAME, enabled ? Translations.getString("MachineControls.Action.Stop") : Translations.getString("MachineControls.Action.Start")); //$NON-NLS-1$ //$NON-NLS-2$
         startStopMachineAction.putValue(Action.SMALL_ICON,
                 enabled ? Icons.powerOff : Icons.powerOn);
-        homeAction.putValue(Action.SMALL_ICON, enabled ? Icons.homeWarning : Icons.home);
     }
 
     private MachineListener machineListener = new MachineListener.Adapter() {
@@ -403,8 +399,8 @@ public class MachineControlsPanel extends JPanel {
                     comboBoxHeadMountable.addItem(new CameraItem(camera));
                 }
                 
-                for (PasteDispenser dispenser : head.getPasteDispensers()) {
-                    comboBoxHeadMountable.addItem(new PasteDispenserItem(dispenser));
+                for (Actuator actuator : head.getActuators()) {
+                    comboBoxHeadMountable.addItem(new ActuatorItem(actuator));
                 }
             }
 
@@ -415,6 +411,8 @@ public class MachineControlsPanel extends JPanel {
             updateStartStopButton(machine.isEnabled());
 
             setEnabled(machine.isEnabled());
+            
+            BeanUtils.bind(UpdateStrategy.READ, machine, "homed", homeAction, "homed");
 
             for (Head head : machine.getHeads()) {
 

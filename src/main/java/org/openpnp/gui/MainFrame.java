@@ -68,6 +68,8 @@ import javax.swing.UIManager;
 import javax.swing.border.BevelBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
+import javax.swing.undo.CannotUndoException;
+import javax.swing.undo.UndoManager;
 
 import org.openpnp.Translations;
 import org.openpnp.gui.components.CameraPanel;
@@ -76,9 +78,8 @@ import org.openpnp.gui.importer.DipTraceImporter;
 import org.openpnp.gui.importer.EagleBoardImporter;
 import org.openpnp.gui.importer.EagleMountsmdUlpImporter;
 import org.openpnp.gui.importer.KicadPosImporter;
-import org.openpnp.gui.importer.NamedCSVImporter;
-import org.openpnp.gui.importer.SolderPasteGerberImporter;
 import org.openpnp.gui.importer.LabcenterProteusImporter; //
+import org.openpnp.gui.importer.NamedCSVImporter;
 import org.openpnp.gui.support.HeadCellValue;
 import org.openpnp.gui.support.LengthCellValue;
 import org.openpnp.gui.support.MessageBoxes;
@@ -144,9 +145,16 @@ public class MainFrame extends JFrame {
     private MachineSetupPanel machineSetupPanel;
     private JDialog frameCamera;
     private JDialog frameMachineControls;
+    private Map<KeyStroke, Action> hotkeyActionMap;
+    
+    private UndoManager undoManager = new UndoManager();
 
     public static MainFrame get() {
         return mainFrame;
+    }
+    
+    public UndoManager getUndoManager() {
+        return undoManager;
     }
 
     public MachineControlsPanel getMachineControls() {
@@ -195,6 +203,10 @@ public class MainFrame extends JFrame {
 
     public JTabbedPane getTabs() {
         return tabs;
+    }
+
+    public Map<KeyStroke, Action> getHotkeyActionMap() {
+        return hotkeyActionMap;
     }
 
     private Preferences prefs = Preferences.userNodeForPackage(MainFrame.class);
@@ -279,6 +291,9 @@ public class MainFrame extends JFrame {
         mnEdit.setMnemonic(KeyEvent.VK_E);
         menuBar.add(mnEdit);
 
+        mnEdit.add(new JMenuItem(undoAction));
+        mnEdit.add(new JMenuItem(redoAction));
+        mnEdit.addSeparator();
         JMenu mnEditAddBoard = new JMenu(jobPanel.addBoardAction);
         mnEditAddBoard.add(new JMenuItem(jobPanel.addNewBoardAction));
         mnEditAddBoard.add(new JMenuItem(jobPanel.addExistingBoardAction));
@@ -327,6 +342,18 @@ public class MainFrame extends JFrame {
         mnLanguage.add(menuItem);
 
         menuItem = new JCheckBoxMenuItem(new LanguageSelectionAction(new Locale("es")));
+        buttonGroup.add(menuItem);
+        mnLanguage.add(menuItem);
+
+        menuItem = new JCheckBoxMenuItem(new LanguageSelectionAction(new Locale("fr")));
+        buttonGroup.add(menuItem);
+        mnLanguage.add(menuItem);
+		
+        menuItem = new JCheckBoxMenuItem(new LanguageSelectionAction(new Locale("it")));
+        buttonGroup.add(menuItem);
+        mnLanguage.add(menuItem);
+
+        menuItem = new JCheckBoxMenuItem(new LanguageSelectionAction(new Locale("de")));
         buttonGroup.add(menuItem);
         mnLanguage.add(menuItem);
 
@@ -391,6 +418,8 @@ public class MainFrame extends JFrame {
         mnHelp.add(setupAndCalibrationLinkAction);
         mnHelp.add(userManualLinkAction);
         mnHelp.addSeparator();
+        mnHelp.add(changeLogAction);
+        mnHelp.addSeparator();
         mnHelp.add(submitDiagnosticsAction);
         if (isInstallerAvailable()) {
             mnHelp.add(new JMenuItem(checkForUpdatesAction));
@@ -411,7 +440,7 @@ public class MainFrame extends JFrame {
         panelMachine.setLayout(new BorderLayout(0, 0));
 
         // Add global hotkeys for the arrow keys
-        final Map<KeyStroke, Action> hotkeyActionMap = new HashMap<>();
+        hotkeyActionMap = new HashMap<>();
 
         int mask = KeyEvent.CTRL_DOWN_MASK;
 
@@ -611,10 +640,19 @@ public class MainFrame extends JFrame {
         registerBoardImporters();
 
         addComponentListener(componentListener);
-
+        
         try {
             configuration.load();
             configuration.getScripting().setMenu(mnScripts);
+            
+            if (Configuration.get().getMachine().getProperty("Welcome2_0_Dialog_Shown") == null) {
+                Welcome2_0Dialog dialog = new Welcome2_0Dialog(this);
+                dialog.setSize(750, 550);
+                dialog.setLocationRelativeTo(null);
+                dialog.setModal(true);
+                dialog.setVisible(true);
+                Configuration.get().getMachine().setProperty("Welcome2_0_Dialog_Shown", true);
+            }
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -718,7 +756,6 @@ public class MainFrame extends JFrame {
         registerBoardImporter(KicadPosImporter.class);
         registerBoardImporter(DipTraceImporter.class);
         registerBoardImporter(NamedCSVImporter.class);
-        registerBoardImporter(SolderPasteGerberImporter.class);
     }
 
     /**
@@ -964,7 +1001,7 @@ public class MainFrame extends JFrame {
         }
     };
 
-    private Action windowStyleMultipleSelected = new AbstractAction("Multiple Window Style") { //$NON-NLS-1$
+    private Action windowStyleMultipleSelected = new AbstractAction(Translations.getString("Menu.Window.MultipleStyle")) { //$NON-NLS-1$
         {
             putValue(MNEMONIC_KEY, KeyEvent.VK_M);
         }
@@ -1087,6 +1124,24 @@ public class MainFrame extends JFrame {
         }
     };
     
+    private Action changeLogAction = new AbstractAction(Translations.getString("Menu.Help.ChangeLog")) { //$NON-NLS-1$
+        @Override
+        public void actionPerformed(ActionEvent arg0) {
+            String uri = "https://github.com/openpnp/openpnp/blob/develop/CHANGES.md"; //$NON-NLS-1$
+            try {
+                if (Desktop.isDesktopSupported()) {
+                    Desktop.getDesktop().browse(new URI(uri));
+                }
+                else {
+                    throw new Exception("Not supported."); //$NON-NLS-1$
+                }
+            }
+            catch (Exception e) {
+                MessageBoxes.errorBox(MainFrame.this, "Unable to launch default browser.", "Unable to launch default browser. Please visit " + uri); //$NON-NLS-1$ //$NON-NLS-2$
+            }
+        }
+    };
+    
     private Action submitDiagnosticsAction = new AbstractAction(Translations.getString("Menu.Help.SubmitDiagnostics")) { //$NON-NLS-1$
         @Override
         public void actionPerformed(ActionEvent arg0) {
@@ -1095,6 +1150,42 @@ public class MainFrame extends JFrame {
             dialog.setSize(620, 720);
             dialog.setLocationRelativeTo(MainFrame.get());
             dialog.setVisible(true);
+        }
+    };
+    
+    public final Action undoAction = new AbstractAction("Undo") {
+        {
+            putValue(MNEMONIC_KEY, KeyEvent.VK_Z);
+            putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke('Z',
+                    Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent arg0) {
+            try {
+                undoManager.undo();
+            }
+            catch (Exception e) {
+                
+            }
+        }
+    };
+    
+    public final Action redoAction = new AbstractAction("Redo") {
+        {
+//            putValue(MNEMONIC_KEY, KeyEvent.VK_Y);
+            putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke('Z',
+                    Toolkit.getDefaultToolkit().getMenuShortcutKeyMask() | KeyEvent.SHIFT_MASK));
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent arg0) {
+            try {
+                undoManager.redo();
+            }
+            catch (Exception e) {
+                
+            }
         }
     };
     

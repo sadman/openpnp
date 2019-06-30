@@ -19,7 +19,6 @@
 
 package org.openpnp.machine.reference.feeder.wizards;
 
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -80,6 +79,7 @@ import org.openpnp.vision.Ransac;
 import org.openpnp.vision.pipeline.CvPipeline;
 import org.openpnp.vision.pipeline.CvStage;
 import org.openpnp.vision.pipeline.ui.CvPipelineEditor;
+import org.openpnp.vision.pipeline.ui.CvPipelineEditorDialog;
 import org.pmw.tinylog.Logger;
 
 import com.google.common.collect.Lists;
@@ -141,13 +141,20 @@ public class ReferenceStripFeederConfigurationWizard extends AbstractConfigurati
                 "General Settings", TitledBorder.LEADING, TitledBorder.TOP, null,
                 new Color(0, 0, 0)));
         contentPanel.add(panelPart);
-        panelPart.setLayout(new FormLayout(
-                new ColumnSpec[] {FormSpecs.RELATED_GAP_COLSPEC, FormSpecs.DEFAULT_COLSPEC,
-                        FormSpecs.RELATED_GAP_COLSPEC, FormSpecs.DEFAULT_COLSPEC,},
-                new RowSpec[] {FormSpecs.RELATED_GAP_ROWSPEC, FormSpecs.DEFAULT_ROWSPEC,
-                        FormSpecs.RELATED_GAP_ROWSPEC, FormSpecs.DEFAULT_ROWSPEC,
-                        FormSpecs.RELATED_GAP_ROWSPEC, FormSpecs.DEFAULT_ROWSPEC,
-                        FormSpecs.RELATED_GAP_ROWSPEC, FormSpecs.DEFAULT_ROWSPEC,}));
+        panelPart.setLayout(new FormLayout(new ColumnSpec[] {
+                FormSpecs.RELATED_GAP_COLSPEC,
+                FormSpecs.DEFAULT_COLSPEC,
+                FormSpecs.RELATED_GAP_COLSPEC,
+                FormSpecs.DEFAULT_COLSPEC,},
+            new RowSpec[] {
+                FormSpecs.RELATED_GAP_ROWSPEC,
+                FormSpecs.DEFAULT_ROWSPEC,
+                FormSpecs.RELATED_GAP_ROWSPEC,
+                FormSpecs.DEFAULT_ROWSPEC,
+                FormSpecs.RELATED_GAP_ROWSPEC,
+                FormSpecs.DEFAULT_ROWSPEC,
+                FormSpecs.RELATED_GAP_ROWSPEC,
+                FormSpecs.DEFAULT_ROWSPEC,}));
         try {
         }
         catch (Throwable t) {
@@ -170,13 +177,21 @@ public class ReferenceStripFeederConfigurationWizard extends AbstractConfigurati
         panelPart.add(textFieldLocationRotation, "4, 4, fill, default");
         textFieldLocationRotation.setColumns(4);
 
-        lblRetryCount = new JLabel("Retry Count");
+        lblRetryCount = new JLabel("Feed Retry Count");
         panelPart.add(lblRetryCount, "2, 6, right, default");
 
         retryCountTf = new JTextField();
         retryCountTf.setText("3");
         panelPart.add(retryCountTf, "4, 6, fill, default");
         retryCountTf.setColumns(3);
+        
+        lblPickRetryCount = new JLabel("Pick Retry Count");
+        panelPart.add(lblPickRetryCount, "2, 8, right, default");
+        
+        pickRetryCount = new JTextField();
+        pickRetryCount.setText("3");
+        pickRetryCount.setColumns(3);
+        panelPart.add(pickRetryCount, "4, 8, fill, default");
 
         lblFeedAfterPick = new JLabel("Feed after pick?");
         panelPart.add(lblFeedAfterPick, "2, 8");
@@ -352,7 +367,8 @@ public class ReferenceStripFeederConfigurationWizard extends AbstractConfigurati
         addWrappedBinding(location, "rotation", textFieldLocationRotation, "text", doubleConverter);
 
         addWrappedBinding(feeder, "part", comboBoxPart, "selectedItem");
-        addWrappedBinding(feeder, "retryCount", retryCountTf, "text", intConverter);
+        addWrappedBinding(feeder, "feedRetryCount", retryCountTf, "text", intConverter);
+        addWrappedBinding(feeder, "pickRetryCount", pickRetryCount, "text", intConverter);
         addWrappedBinding(feeder, "tapeType", comboBoxTapeType, "selectedItem");
 
         addWrappedBinding(feeder, "tapeWidth", textFieldTapeWidth, "text", lengthConverter);
@@ -381,6 +397,7 @@ public class ReferenceStripFeederConfigurationWizard extends AbstractConfigurati
         ComponentDecorators.decorateWithAutoSelect(textFieldLocationRotation);
         ComponentDecorators.decorateWithAutoSelectAndLengthConversion(textFieldTapeWidth);
         ComponentDecorators.decorateWithAutoSelect(retryCountTf);
+        ComponentDecorators.decorateWithAutoSelect(pickRetryCount);
         ComponentDecorators.decorateWithAutoSelectAndLengthConversion(textFieldPartPitch);
         ComponentDecorators.decorateWithAutoSelect(textFieldFeedCount);
         ComponentDecorators.decorateWithAutoSelectAndLengthConversion(textFieldFeedStartX);
@@ -581,6 +598,8 @@ public class ReferenceStripFeederConfigurationWizard extends AbstractConfigurati
                          });
         }
     };
+    private JLabel lblPickRetryCount;
+    private JTextField pickRetryCount;
 
     private List<Location> findHoles(Camera camera) throws Exception {
         // Process the pipeline to clean up the image and detect the tape holes
@@ -906,10 +925,7 @@ public class ReferenceStripFeederConfigurationWizard extends AbstractConfigurati
         Camera camera = Configuration.get().getMachine().getDefaultHead().getDefaultCamera();
         CvPipeline pipeline = getCvPipeline(camera, false);
         CvPipelineEditor editor = new CvPipelineEditor(pipeline);
-        JDialog dialog = new JDialog(MainFrame.get(), feeder.getName() + " Pipeline");
-        dialog.getContentPane().setLayout(new BorderLayout());
-        dialog.getContentPane().add(editor);
-        dialog.setSize(1024, 768);
+        JDialog dialog = new CvPipelineEditorDialog(MainFrame.get(), feeder.getName() + " Pipeline", editor);
         dialog.setVisible(true);
     }
 

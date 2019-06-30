@@ -72,7 +72,7 @@ public class Scripting {
         if (!getScriptsDirectory().exists()) {
             getScriptsDirectory().mkdirs();
         }
-
+        
         // TODO: It would be better if we just copied all the files from the Examples
         // directory in the jar, but this is relatively difficult to do.
         // There is some information on how to do it in:
@@ -84,6 +84,7 @@ public class Scripting {
                         "JavaScript/Call_Java.js", 
                         "JavaScript/Hello_World.js", 
                         "JavaScript/Move_Machine.js", 
+                        "JavaScript/Pipeline.js",
                         "JavaScript/Print_Scripting_Info.js",
                         "JavaScript/QrCodeXout.js",
                         "JavaScript/Reset_Strip_Feeders.js", 
@@ -147,7 +148,7 @@ public class Scripting {
         this.menu = menu;
         // Add a separator and the Refresh Scripts and Open Scripts Directory items
         menu.addSeparator();
-        menu.add(new AbstractAction("Refresh Scripts") {
+        menu.add(new AbstractAction(Translations.getString("Scripting.Action.Refresh")) {
             {
                 putValue(MNEMONIC_KEY, KeyEvent.VK_R);
             }
@@ -157,7 +158,7 @@ public class Scripting {
                 synchronizeMenu(menu, getScriptsDirectory());
             }
         });
-        menu.add(new AbstractAction("Open Scripts Directory") {
+        menu.add(new AbstractAction(Translations.getString("Scripting.Action.OpenScriptsDirectory")) {
             {
                 putValue(MNEMONIC_KEY, KeyEvent.VK_O);
             }

@@ -29,7 +29,6 @@ import org.openpnp.machine.reference.ReferenceHeadMountable;
 import org.openpnp.machine.reference.ReferenceMachine;
 import org.openpnp.machine.reference.ReferenceNozzle;
 import org.openpnp.machine.reference.ReferenceNozzleTip;
-import org.openpnp.machine.reference.ReferencePasteDispenser;
 import org.openpnp.machine.reference.driver.wizards.GcodeDriverConsole;
 import org.openpnp.machine.reference.driver.wizards.GcodeDriverGcodes;
 import org.openpnp.machine.reference.driver.wizards.GcodeDriverSettings;
@@ -74,10 +73,7 @@ public class GcodeDriver extends AbstractReferenceDriver implements Named, Runna
         ACTUATE_BOOLEAN_COMMAND(true, "Id", "Name", "Index", "BooleanValue", "True", "False"),
         ACTUATE_DOUBLE_COMMAND(true, "Id", "Name", "Index", "DoubleValue", "IntegerValue"),
         ACTUATOR_READ_COMMAND(true, "Id", "Name", "Index"),
-        ACTUATOR_READ_REGEX(true),
-        PRE_DISPENSE_COMMAND(false, "DispenseTime"),
-        DISPENSE_COMMAND(false, "DispenseTime"),
-        POST_DISPENSE_COMMAND(false, "DispenseTime");
+        ACTUATOR_READ_REGEX(true);
 
         final boolean headMountable;
         final String[] variableNames;
@@ -297,29 +293,6 @@ public class GcodeDriver extends AbstractReferenceDriver implements Named, Runna
             	disconnect();
         	}
         }
-    }
-
-    @Override
-    public void dispense(ReferencePasteDispenser dispenser,Location startLocation,Location endLocation,long dispenseTimeMilliseconds) throws Exception {
-        Logger.debug("dispense({}, {}, {}, {})", new Object[] {dispenser, startLocation, endLocation, dispenseTimeMilliseconds});
-
-        String command = getCommand(null, CommandType.PRE_DISPENSE_COMMAND);
-        command = substituteVariable(command, "DispenseTime", dispenseTimeMilliseconds);
-
-        sendGcode(command);
-
-        for (ReferenceDriver driver: subDrivers )
-        {
-            driver.dispense(dispenser,startLocation,endLocation,dispenseTimeMilliseconds);
-        }
-
-        command = getCommand(null, CommandType.DISPENSE_COMMAND);
-        command = substituteVariable(command, "DispenseTime", dispenseTimeMilliseconds);
-        sendGcode(command);
-
-        command = getCommand(null, CommandType.POST_DISPENSE_COMMAND);
-        command = substituteVariable(command, "DispenseTime", dispenseTimeMilliseconds);
-        sendGcode(command);
     }
 
     @Override
@@ -651,9 +624,12 @@ public class GcodeDriver extends AbstractReferenceDriver implements Named, Runna
             }
             
             if (includeX) {
-                command = substituteVariable(command, "X", x + nonSquarenessFactor * y);
-                command = substituteVariable(command, "XF", x + nonSquarenessFactor * y);
+                double newX = x + nonSquarenessFactor * y;
+                command = substituteVariable(command, "X", newX);
+                command = substituteVariable(command, "XF", newX);
                 command = substituteVariable(command, "BacklashOffsetX", x + backlashOffsetX + nonSquarenessFactor * y); // Backlash Compensation
+                command = substituteVariable(command, "XDecreasing", newX < xAxis.getCoordinate() ? true : null);
+                command = substituteVariable(command, "XIncreasing", newX > xAxis.getCoordinate() ? true : null);
                 if (xAxis.getPreMoveCommand() != null) {
                     String preMoveCommand = xAxis.getPreMoveCommand();
                     preMoveCommand = substituteVariable(preMoveCommand, "Coordinate", xAxis.getCoordinate());
@@ -665,12 +641,16 @@ public class GcodeDriver extends AbstractReferenceDriver implements Named, Runna
             	command = substituteVariable(command, "X", null);
             	command = substituteVariable(command, "XF", null);
                 command = substituteVariable(command, "BacklashOffsetX", null); // Backlash Compensation
+                command = substituteVariable(command, "XDecreasing", null);
+                command = substituteVariable(command, "XIncreasing", null);
             }
 
             if (includeY) {
             	command = substituteVariable(command, "Y", y);
             	command = substituteVariable(command, "YF", y);
                 command = substituteVariable(command, "BacklashOffsetY", y + backlashOffsetY); // Backlash Compensation
+                command = substituteVariable(command, "YDecreasing", y < yAxis.getCoordinate() ? true : null);
+                command = substituteVariable(command, "YIncreasing", y > yAxis.getCoordinate() ? true : null);
                 if (yAxis.getPreMoveCommand() != null) {
                     String preMoveCommand = yAxis.getPreMoveCommand();
                     preMoveCommand = substituteVariable(preMoveCommand, "Coordinate", yAxis.getCoordinate());
@@ -681,11 +661,15 @@ public class GcodeDriver extends AbstractReferenceDriver implements Named, Runna
             	command = substituteVariable(command, "Y", null);
             	command = substituteVariable(command, "YF", null);
                 command = substituteVariable(command, "BacklashOffsetY", null); // Backlash Compensation
+                command = substituteVariable(command, "YDecreasing", null);
+                command = substituteVariable(command, "YIncreasing", null);
             }
 
             if (includeZ) {
             	command = substituteVariable(command, "Z", z);
             	command = substituteVariable(command, "ZF", z);
+                command = substituteVariable(command, "ZDecreasing", z < zAxis.getCoordinate() ? true : null);
+                command = substituteVariable(command, "ZIncreasing", z > zAxis.getCoordinate() ? true : null);
                 if (zAxis.getPreMoveCommand() != null) {
                     String preMoveCommand = zAxis.getPreMoveCommand();
                     preMoveCommand = substituteVariable(preMoveCommand, "Coordinate", zAxis.getCoordinate());
@@ -695,11 +679,15 @@ public class GcodeDriver extends AbstractReferenceDriver implements Named, Runna
             else {
                 command = substituteVariable(command, "Z", null);
                 command = substituteVariable(command, "ZF", null);
+                command = substituteVariable(command, "ZDecreasing", null);
+                command = substituteVariable(command, "ZIncreasing", null);
             }
 
             if (includeRotation) {
             	command = substituteVariable(command, "Rotation", rotation);
             	command = substituteVariable(command, "RotationF", rotation);
+                command = substituteVariable(command, "RotationDecreasing", rotation < rotationAxis.getCoordinate() ? true : null);
+                command = substituteVariable(command, "RotationIncreasing", rotation > rotationAxis.getCoordinate() ? true : null);
                 if (rotationAxis.getPreMoveCommand() != null) {
                     String preMoveCommand = rotationAxis.getPreMoveCommand();
                     preMoveCommand = substituteVariable(preMoveCommand, "Coordinate", rotationAxis.getCoordinate());
@@ -709,6 +697,8 @@ public class GcodeDriver extends AbstractReferenceDriver implements Named, Runna
             else {
                 command = substituteVariable(command, "Rotation", null);
                 command = substituteVariable(command, "RotationF", null);
+                command = substituteVariable(command, "RotationDecreasing", null);
+                command = substituteVariable(command, "RotationIncreasing", null);
             }
 
             // Only give a command when move is necessary
@@ -783,10 +773,6 @@ public class GcodeDriver extends AbstractReferenceDriver implements Named, Runna
         command = substituteVariable(command, "Id", nozzle.getId());
         command = substituteVariable(command, "Name", nozzle.getName());
 
-        ReferenceNozzleTip nt = nozzle.getNozzleTip();
-        command = substituteVariable(command, "VacuumLevelPartOn", nt.getVacuumLevelPartOn());
-        command = substituteVariable(command, "VacuumLevelPartOff", nt.getVacuumLevelPartOff());
-
         sendGcode(command);
 
         for (ReferenceDriver driver : subDrivers) {
@@ -797,14 +783,10 @@ public class GcodeDriver extends AbstractReferenceDriver implements Named, Runna
     @Override
     public void place(ReferenceNozzle nozzle) throws Exception {
 
-        ReferenceNozzleTip nt = nozzle.getNozzleTip();
-
         String command = getCommand(nozzle, CommandType.PLACE_COMMAND);
         command = substituteVariable(command, "Id", nozzle.getId());
         command = substituteVariable(command, "Name", nozzle.getName());
 
-        command = substituteVariable(command, "VacuumLevelPartOn", nt.getVacuumLevelPartOn());
-        command = substituteVariable(command, "VacuumLevelPartOff", nt.getVacuumLevelPartOff());
         sendGcode(command);
 
         pickedNozzles.remove(nozzle);
