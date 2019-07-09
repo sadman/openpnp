@@ -73,6 +73,8 @@ public class ReferenceCameraTransformsConfigurationWizard extends AbstractConfig
                 FormSpecs.RELATED_GAP_ROWSPEC,
                 FormSpecs.DEFAULT_ROWSPEC,
                 FormSpecs.RELATED_GAP_ROWSPEC,
+                FormSpecs.DEFAULT_ROWSPEC,
+                FormSpecs.RELATED_GAP_ROWSPEC,
                 FormSpecs.DEFAULT_ROWSPEC,}));
 
         lblRotation = new JLabel("Rotation");
@@ -128,34 +130,43 @@ public class ReferenceCameraTransformsConfigurationWizard extends AbstractConfig
         lblNewLabel_1 = new JLabel("(Use 0 for no cropping)");
         panelTransforms.add(lblNewLabel_1, "5, 14");
         
+        lblCropAfterUndistort = new JLabel("Crop After Calibration");
+        panelTransforms.add(lblCropAfterUndistort, "2, 16");
+        
+        chkCropAfterUndistort = new JCheckBox("");
+        panelTransforms.add(chkCropAfterUndistort, "4, 16");
+        
+        lblcropsAfterLens = new JLabel("(Crops after lens calibration is applied)");
+        panelTransforms.add(lblcropsAfterLens, "5, 16");
+        
         lblScaleWidth = new JLabel("Scale Width");
-        panelTransforms.add(lblScaleWidth, "2, 16, right, default");
+        panelTransforms.add(lblScaleWidth, "2, 18, right, default");
         
         scaleWidthTf = new JTextField();
-        panelTransforms.add(scaleWidthTf, "4, 16, fill, default");
+        panelTransforms.add(scaleWidthTf, "4, 18, fill, default");
         scaleWidthTf.setColumns(10);
         
         lbluseFor = new JLabel("(Use 0 for no scaling)");
-        panelTransforms.add(lbluseFor, "5, 16");
+        panelTransforms.add(lbluseFor, "5, 18");
         
         lblScaleHeight = new JLabel("Scale Height");
-        panelTransforms.add(lblScaleHeight, "2, 18, right, default");
+        panelTransforms.add(lblScaleHeight, "2, 20, right, default");
         
         scaleHeightTf = new JTextField();
-        panelTransforms.add(scaleHeightTf, "4, 18, fill, default");
+        panelTransforms.add(scaleHeightTf, "4, 20, fill, default");
         scaleHeightTf.setColumns(10);
         
         label = new JLabel("(Use 0 for no scaling)");
-        panelTransforms.add(label, "5, 18");
+        panelTransforms.add(label, "5, 20");
         
         lblDeinterlace = new JLabel("De-Interlace");
-        panelTransforms.add(lblDeinterlace, "2, 20");
+        panelTransforms.add(lblDeinterlace, "2, 22");
         
         deinterlaceChk = new JCheckBox("");
-        panelTransforms.add(deinterlaceChk, "4, 20");
+        panelTransforms.add(deinterlaceChk, "4, 22");
         
         lblremovesInterlacingFrom = new JLabel("(Removes interlacing from stacked frames)");
-        panelTransforms.add(lblremovesInterlacingFrom, "5, 20");
+        panelTransforms.add(lblremovesInterlacingFrom, "5, 22");
     }
 
     @Override
@@ -172,6 +183,7 @@ public class ReferenceCameraTransformsConfigurationWizard extends AbstractConfig
         addWrappedBinding(referenceCamera, "flipY", checkBoxFlipY, "selected");
         addWrappedBinding(referenceCamera, "cropWidth", cropWidthTextField, "text", intConverter);
         addWrappedBinding(referenceCamera, "cropHeight", cropHeightTextField, "text", intConverter);
+        addWrappedBinding(referenceCamera, "cropAfterUndistort", chkCropAfterUndistort, "selected");
         addWrappedBinding(referenceCamera, "scaleWidth", scaleWidthTf, "text", intConverter);
         addWrappedBinding(referenceCamera, "scaleHeight", scaleHeightTf, "text", intConverter);
         addWrappedBinding(referenceCamera, "deinterlace", deinterlaceChk, "selected");
@@ -202,4 +214,7 @@ public class ReferenceCameraTransformsConfigurationWizard extends AbstractConfig
     private JCheckBox deinterlaceChk;
     private JLabel lblDeinterlace;
     private JLabel lblremovesInterlacingFrom;
+    private JLabel lblCropAfterUndistort;
+    private JCheckBox chkCropAfterUndistort;
+    private JLabel lblcropsAfterLens;
 }

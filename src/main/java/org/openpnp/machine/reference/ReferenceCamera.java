@@ -114,6 +114,9 @@ public abstract class ReferenceCamera extends AbstractCamera implements Referenc
     @Element(required = false)
     private LensCalibrationParams calibration = new LensCalibrationParams();
     
+    @Attribute(required = false)
+    protected boolean cropAfterUndistort = false;
+
     private boolean calibrating;
     private CalibrationCallback calibrationCallback;
     private int calibrationCountGoal = 25;
@@ -312,6 +315,7 @@ public abstract class ReferenceCamera extends AbstractCamera implements Referenc
     public void setCropWidth(int cropWidth) {
         this.cropWidth = cropWidth;
         viewHasChanged();
+        undistortionMap1 = null;
     }
 
     public int getCropHeight() {
@@ -321,6 +325,7 @@ public abstract class ReferenceCamera extends AbstractCamera implements Referenc
     public void setCropHeight(int cropHeight) {
         this.cropHeight = cropHeight;
         viewHasChanged();
+        undistortionMap1 = null;
     }
 
     public int getScaleWidth() {
@@ -349,15 +354,33 @@ public abstract class ReferenceCamera extends AbstractCamera implements Referenc
         this.deinterlace = deinterlace;
     }
 
+    public boolean getCropAfterUndistort() {
+        return cropAfterUndistort;
+    }
+
+    public void setCropAfterUndistort(boolean cropAfterUndistort) {
+        this.cropAfterUndistort = cropAfterUndistort;
+        undistortionMap1 = null;
+    }
+
     // TODO Optimization: We could skip the convert to and from Mat if no transforms are needed.
     protected BufferedImage transformImage(BufferedImage image) {
         Mat mat = OpenCvUtils.toMat(image);
 
-        mat = crop(mat);
+        if (cropAfterUndistort) {
+            mat = calibrate(mat);
 
-        mat = calibrate(mat);
+            mat = undistort(mat);
 
-        mat = undistort(mat);
+            mat = crop(mat);
+        }
+        else {
+            mat = crop(mat);
+
+            mat = calibrate(mat);
+
+            mat = undistort(mat);
+        }
 
         // apply affine transformations
         mat = scale(mat, scaleWidth, scaleHeight);
