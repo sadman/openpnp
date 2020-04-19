@@ -19,16 +19,14 @@
 
 package org.openpnp.machine.reference.wizards;
 
-import java.awt.Color;
+import java.awt.BorderLayout;
 
+import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JTextField;
-import javax.swing.border.EtchedBorder;
-import javax.swing.border.TitledBorder;
 
-import org.openpnp.gui.components.ComponentDecorators;
 import org.openpnp.gui.support.AbstractConfigurationWizard;
+import org.openpnp.gui.support.ActuatorsComboBoxModel;
 import org.openpnp.gui.support.IntegerConverter;
 import org.openpnp.gui.support.LengthConverter;
 import org.openpnp.machine.reference.ReferenceNozzle;
@@ -38,16 +36,16 @@ import com.jgoodies.forms.layout.ColumnSpec;
 import com.jgoodies.forms.layout.FormLayout;
 import com.jgoodies.forms.layout.FormSpecs;
 import com.jgoodies.forms.layout.RowSpec;
-import java.awt.BorderLayout;
 
 @SuppressWarnings("serial")
-public class ReferenceNozzlePartDetectionWizard extends AbstractConfigurationWizard {
+public class ReferenceNozzleVacuumWizard extends AbstractConfigurationWizard {
     private final ReferenceNozzle nozzle;
     private JLabel label;
-    private JTextField vacSenseActuatorNameTf;
     private JPanel panel;
+    private JComboBox vacuumComboBoxActuator;
+    private JComboBox blowOffComboBoxActuator;
 
-    public ReferenceNozzlePartDetectionWizard(ReferenceNozzle nozzle) {
+    public ReferenceNozzleVacuumWizard(ReferenceNozzle nozzle) {
         this.nozzle = nozzle;
         createUi();
     }
@@ -60,17 +58,23 @@ public class ReferenceNozzlePartDetectionWizard extends AbstractConfigurationWiz
         contentPanel.add(panel);
         panel.setLayout(new FormLayout(new ColumnSpec[] {
                 FormSpecs.DEFAULT_COLSPEC,
-                FormSpecs.DEFAULT_COLSPEC,},
+                ColumnSpec.decode("default:grow"),},
             new RowSpec[] {
-                FormSpecs.RELATED_GAP_ROWSPEC,
-                RowSpec.decode("26px"),}));
+                FormSpecs.RELATED_GAP_ROWSPEC, 
+                FormSpecs.DEFAULT_ROWSPEC,
+                FormSpecs.DEFAULT_ROWSPEC,}));
         
-        label = new JLabel("Vacuum Sense Actuator Name");
-        panel.add(label, "1, 2, left, center");
+        label = new JLabel("Vacuum Actuator");
+        panel.add(label, "1, 2, right, center");
+        label = new JLabel("Blow Off Actuator");
+        panel.add(label, "1, 3, right, center");
         
-        vacSenseActuatorNameTf = new JTextField();
-        panel.add(vacSenseActuatorNameTf, "2, 2, left, top");
-        vacSenseActuatorNameTf.setColumns(10);
+        vacuumComboBoxActuator = new JComboBox();
+        vacuumComboBoxActuator.setModel(new ActuatorsComboBoxModel(nozzle.getHead()));
+        panel.add(vacuumComboBoxActuator, "2, 2");
+        blowOffComboBoxActuator = new JComboBox();
+        blowOffComboBoxActuator.setModel(new ActuatorsComboBoxModel(nozzle.getHead()));
+        panel.add(blowOffComboBoxActuator, "2, 3");
     }
 
     @Override
@@ -78,8 +82,7 @@ public class ReferenceNozzlePartDetectionWizard extends AbstractConfigurationWiz
         LengthConverter lengthConverter = new LengthConverter();
         IntegerConverter intConverter = new IntegerConverter();
 
-        addWrappedBinding(nozzle, "vacuumSenseActuatorName", vacSenseActuatorNameTf, "text");
-
-        ComponentDecorators.decorateWithAutoSelect(vacSenseActuatorNameTf);
+        addWrappedBinding(nozzle, "vacuumActuatorName", vacuumComboBoxActuator, "selectedItem");
+        addWrappedBinding(nozzle, "blowOffActuatorName", blowOffComboBoxActuator, "selectedItem");
     }
 }

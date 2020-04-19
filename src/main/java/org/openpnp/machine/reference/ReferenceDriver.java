@@ -70,24 +70,6 @@ public interface ReferenceDriver extends WizardConfigurable, PropertySheetHolder
     public Location getLocation(ReferenceHeadMountable hm);
 
     /**
-     * Causes the nozzle to apply vacuum and any other operation that it uses for picking up a part
-     * that it is resting on.
-     * 
-     * @param nozzle
-     * @throws Exception
-     */
-    public void pick(ReferenceNozzle nozzle) throws Exception;
-
-    /**
-     * Causes the nozzle to release vacuum and any other operation that it uses for placing a part
-     * that it is currently holding. For instance, it might provide a brief puff of air to set the
-     * part.
-     * 
-     * @throws Exception
-     */
-    public void place(ReferenceNozzle nozzle) throws Exception;
-
-    /**
      * Actuates a machine defined object with a boolean state.
      * 
      * @param actuator
@@ -113,6 +95,18 @@ public interface ReferenceDriver extends WizardConfigurable, PropertySheetHolder
      * @throws Exception
      */
     public default String actuatorRead(ReferenceActuator actuator) throws Exception {
+        return null;
+    }
+
+    /**
+     * Read a given String value from the given Actuator.
+     * 
+     * @param actuator
+     * @param parameter
+     * @return 
+     * @throws Exception
+     */
+    public default String actuatorRead(ReferenceActuator actuator, double parameter) throws Exception {
         return null;
     }
 

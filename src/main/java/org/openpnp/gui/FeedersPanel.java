@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -60,6 +61,7 @@ import org.openpnp.gui.JobPanel.SetEnabledAction;
 import org.openpnp.gui.JobPanel.SetSideAction;
 import org.openpnp.gui.components.AutoSelectTextTable;
 import org.openpnp.gui.components.ClassSelectionDialog;
+import org.openpnp.gui.support.AbstractConfigurationWizard;
 import org.openpnp.gui.support.ActionGroup;
 import org.openpnp.gui.support.Helpers;
 import org.openpnp.gui.support.Icons;
@@ -75,6 +77,8 @@ import org.openpnp.model.Part;
 import org.openpnp.spi.Camera;
 import org.openpnp.spi.Feeder;
 import org.openpnp.spi.Nozzle;
+import org.openpnp.spi.NozzleTip;
+import org.openpnp.spi.JobProcessor.JobProcessorException;
 import org.openpnp.spi.PropertySheetHolder.PropertySheet;
 import org.openpnp.util.MovableUtils;
 import org.openpnp.util.UiUtils;
@@ -100,7 +104,11 @@ public class FeedersPanel extends JPanel implements WizardContainer {
     private ActionGroup multiSelectActionGroup;
 
     private Preferences prefs = Preferences.userNodeForPackage(FeedersPanel.class);
-
+    
+    private JTabbedPane configurationPanel;
+    private int priorRowIndex = -1;
+    private String priorFeederId;
+    
     public FeedersPanel(Configuration configuration, MainFrame mainFrame) {
         this.configuration = configuration;
         this.mainFrame = mainFrame;
@@ -178,7 +186,7 @@ public class FeedersPanel extends JPanel implements WizardContainer {
         table.setRowSorter(tableSorter);
         table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
-        JTabbedPane configurationPanel = new JTabbedPane(JTabbedPane.TOP);
+        configurationPanel = new JTabbedPane(JTabbedPane.TOP);
         splitPane.setRightComponent(configurationPanel);
 
         singleSelectActionGroup = new ActionGroup(deleteFeederAction, feedFeederAction,
@@ -210,20 +218,31 @@ public class FeedersPanel extends JPanel implements WizardContainer {
                     multiSelectActionGroup.setEnabled(true);
                 }
 
-                Feeder feeder = getSelection();
-                
-                configurationPanel.removeAll();
-                if (feeder != null) {
-                    PropertySheet[] propertySheets = feeder.getPropertySheets();
-                    for (PropertySheet ps : propertySheets) {
-                        configurationPanel.addTab(ps.getPropertySheetTitle(), ps.getPropertySheetPanel());
+                if (table.getSelectedRow() != priorRowIndex) {
+                    if (keepUnAppliedFeederConfigurationChanges()) {
+                        table.setRowSelectionInterval(priorRowIndex, priorRowIndex);
+                        return;
                     }
+                    priorRowIndex = table.getSelectedRow();
+                    
+                    Feeder feeder = getSelection();
+                    
+                    configurationPanel.removeAll();
+                    if (feeder != null) {
+                        priorFeederId = feeder.getId();
+                        PropertySheet[] propertySheets = feeder.getPropertySheets();
+                        for (PropertySheet ps : propertySheets) {
+                            AbstractConfigurationWizard wizard = (AbstractConfigurationWizard) ps.getPropertySheetPanel();
+                            wizard.setWizardContainer(FeedersPanel.this);
+                            configurationPanel.addTab(ps.getPropertySheetTitle(), wizard);
+                        }
+                    }
+                    
+                    revalidate();
+                    repaint();
+                    
+                    Configuration.get().getBus().post(new FeederSelectedEvent(feeder, FeedersPanel.this));
                 }
-                
-                revalidate();
-                repaint();
-                
-                Configuration.get().getBus().post(new FeederSelectedEvent(feeder, FeedersPanel.this));
             }
         });
 
@@ -237,6 +256,30 @@ public class FeedersPanel extends JPanel implements WizardContainer {
         popupMenu.add(setEnabledMenu);
 
         table.setComponentPopupMenu(popupMenu);
+    }
+    
+    private boolean keepUnAppliedFeederConfigurationChanges() {
+        Feeder priorFeeder = configuration.getMachine().getFeeder(priorFeederId);
+        boolean feederConfigurationIsDirty = false;
+        int i = 0;
+        while (!feederConfigurationIsDirty && (i<configurationPanel.getComponentCount())) {
+            feederConfigurationIsDirty = ((AbstractConfigurationWizard) configurationPanel.getComponent(i)).isDirty();
+            i++;
+        }
+        if (feederConfigurationIsDirty && (priorFeeder != null)) {
+            int selection = JOptionPane.showOptionDialog(null,
+                    "Configuration changes to '" + priorFeeder.getName() + "' will be lost.  Do you want to proceed?",
+                    "Warning!",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE,
+                    null,
+                    new String[]{"Yes", "No"},
+                    "No");
+            return (selection != JOptionPane.YES_OPTION);
+        } else {
+            return false;
+        }
+        
     }
     
     @Subscribe
@@ -330,7 +373,7 @@ public class FeedersPanel extends JPanel implements WizardContainer {
         }
         tableSorter.setRowFilter(rf);
     }
-    
+
     @Override
     public void wizardCompleted(Wizard wizard) {
         // Repaint the table so that any changed fields get updated.
@@ -341,6 +384,10 @@ public class FeedersPanel extends JPanel implements WizardContainer {
     public void wizardCancelled(Wizard wizard) {}
 
     private void newFeeder(Part part) {
+        if (keepUnAppliedFeederConfigurationChanges()) {
+            return;
+        }
+        
         if (Configuration.get().getParts().size() == 0) {
             MessageBoxes.errorBox(getTopLevelAncestor(), "Error",
                     "There are currently no parts defined in the system. Please create at least one part before creating a feeder.");
@@ -364,6 +411,8 @@ public class FeedersPanel extends JPanel implements WizardContainer {
             return;
         }
         try {
+            priorFeederId = null;
+            
             Feeder feeder = feederClass.newInstance();
 
             feeder.setPart(part == null ? Configuration.get().getParts().get(0) : part);
@@ -459,15 +508,59 @@ public class FeedersPanel extends JPanel implements WizardContainer {
         public void actionPerformed(ActionEvent arg0) {
             UiUtils.submitUiMachineTask(() -> {
                 Feeder feeder = getSelection();
-                Nozzle nozzle = MainFrame.get().getMachineControls().getSelectedNozzle();
 
+                // Simulate a "one feeder" job, prepare the feeder.
+                List<Feeder> feedersToPrepare = new ArrayList<>();
+                feedersToPrepare.add(feeder);
+                feeder.prepareForJob(feedersToPrepare);
+
+                // Check the nozzle tip package compatibility.
+                Nozzle nozzle = MainFrame.get().getMachineControls().getSelectedNozzle();
+                org.openpnp.model.Package packag = feeder.getPart().getPackage();
+                if (nozzle.getNozzleTip() == null || 
+                        !packag.getCompatibleNozzleTips().contains(nozzle.getNozzleTip())) {
+                    // Wrong nozzle tip, try find one that works.
+                    boolean resolved = false;
+                    if (nozzle.isNozzleTipChangedOnManualFeed()) {
+                        for (NozzleTip nozzleTip : packag.getCompatibleNozzleTips()) {
+                            if (nozzle.getCompatibleNozzleTips().contains(nozzleTip)) {
+                                // Found a compatible one.
+                                nozzle.loadNozzleTip(nozzleTip);
+                                resolved = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (nozzle.getNozzleTip() == null) {
+                        throw new Exception("Can't pick, no nozzle tip loaded on nozzle "+nozzle.getName()+". "
+                                +"You may want to enable automatic nozzle tip change on manual feed on the Nozzle / Tool Changer.");
+                    }
+                    else if (! resolved) {
+                        throw new Exception("Can't pick, loaded nozzle tip "+
+                                nozzle.getNozzleTip().getName()+" is not compatible with package "+packag.getId()+". "
+                                +"You may want to enable automatic nozzle tip change on manual feed on the Nozzle / Tool Changer.");
+                    }
+                }
+
+                // Perform the feed.
                 nozzle.moveToSafeZ();
                 feeder.feed(nozzle);
+
+                // Go to the pick location and pick.
                 Location pickLocation = feeder.getPickLocation();
                 MovableUtils.moveToLocationAtSafeZ(nozzle, pickLocation);
                 nozzle.pick(feeder.getPart());
                 nozzle.moveToSafeZ();
+
+                // After the pick. 
                 feeder.postPick(nozzle);
+
+                // Perform the vacuum check, if enabled.
+                if (nozzle.isPartOnEnabled()) {
+                    if(!nozzle.isPartOn()) {
+                        throw new JobProcessorException(nozzle, "No part detected.");
+                    }
+                }
             });
         }
     };
@@ -552,6 +645,7 @@ public class FeedersPanel extends JPanel implements WizardContainer {
             for (Feeder f : getSelections()) {
                 f.setEnabled(value);
             }
+            table.repaint();
         }
     };
 }
