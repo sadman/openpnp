@@ -119,7 +119,7 @@ public class ReferencePushPullFeeder extends ReferenceFeeder {
     @Element(required = false)
     private Length feedPitch = new Length(4, LengthUnit.Millimeters);
     @Attribute(required = false)
-    private long feedMultiplier= 1;
+    private int feedMultiplier= 1;
 
     @Element(required = false)
     protected double feedSpeedPush1 = 1.0; 
@@ -173,7 +173,7 @@ public class ReferencePushPullFeeder extends ReferenceFeeder {
     protected String peelOffActuatorName;
 
     @Attribute(required = false)
-    private long feedCount = 0;
+    private int feedCount = 0;
 
     @Element(required = false)
     private CvPipeline pipeline = createDefaultPipeline();
@@ -327,7 +327,7 @@ public class ReferencePushPullFeeder extends ReferenceFeeder {
         // therefore the modulo calculation is a bit gnarly.
         // The 1-based approach has the benefit, that at feed count 0 (reset) the part closest to the reel 
         // is the pick location which is the last part in a multi-part feed cycle, which is the one we want for setup.  
-        long partInCycle = ((getFeedCount()+getPartsPerFeedCycle()-1) % getPartsPerFeedCycle())+1;
+        int partInCycle = ((getFeedCount()+getPartsPerFeedCycle()-1) % getPartsPerFeedCycle())+1;
         return getPickLocation(partInCycle, visionOffset);
     }
 
@@ -376,8 +376,8 @@ public class ReferencePushPullFeeder extends ReferenceFeeder {
             MovableUtils.moveToLocationAtSafeZ(actuator, feedStartLocation);
             double baseSpeed = actuator.getHead().getMachine().getSpeed();
 
-            long feedsPerPart = (long)Math.ceil(getPartPitch().divide(getFeedPitch()));
-            long n = getFeedMultiplier()*feedsPerPart;
+            int feedsPerPart = (int)Math.ceil(getPartPitch().divide(getFeedPitch()));
+            int n = getFeedMultiplier()*feedsPerPart;
             for (long i = 0; i < n; i++) {  // perform multiple feeds if required
 
                 boolean isFirst = (i == 0); 
@@ -841,21 +841,21 @@ public class ReferencePushPullFeeder extends ReferenceFeeder {
                         actuatorName == null ? "" : actuatorName);
     }
 
-    public long getFeedCount() {
+    public int getFeedCount() {
         return feedCount;
     }
 
-    public void setFeedCount(long feedCount) {
-        long oldValue = this.feedCount;
+    public void setFeedCount(int feedCount) {
+        int oldValue = this.feedCount;
         this.feedCount = feedCount;
         firePropertyChange("feedCount", oldValue, feedCount);
     }
 
-    public long getFeedMultiplier() {
+    public int getFeedMultiplier() {
         return feedMultiplier;
     }
 
-    public void setFeedMultiplier(long feedMultiplier) {
+    public void setFeedMultiplier(int feedMultiplier) {
         Object oldValue = this.feedMultiplier;
         this.feedMultiplier = feedMultiplier;
         firePropertyChange("feedMultiplier", oldValue, feedMultiplier);
@@ -1003,9 +1003,9 @@ public class ReferencePushPullFeeder extends ReferenceFeeder {
                 getLocation().getUnits());
     }
 
-    public long getPartsPerFeedCycle() {
-        long feedsPerPart = (long)Math.ceil(getPartPitch().divide(getFeedPitch()));
-        return Math.round(getFeedMultiplier()*Math.ceil(feedsPerPart*getFeedPitch().divide(getPartPitch())));
+    public int getPartsPerFeedCycle() {
+        int feedsPerPart = (int)Math.ceil(getPartPitch().divide(getFeedPitch()));
+        return (int)Math.round(getFeedMultiplier()*Math.ceil(feedsPerPart*getFeedPitch().divide(getPartPitch())));
     }
 
     public void resetCalibrationStatistics() {
@@ -1055,10 +1055,10 @@ public class ReferencePushPullFeeder extends ReferenceFeeder {
         return backwardTransform(machineLocation, getTransform(visionOffset));
     }
 
-    public Location getPickLocation(long partInCycle, Location visionOffset)  {
+    public Location getPickLocation(int partInCycle, Location visionOffset)  {
         // If the feeder is advancing more than one part per feed cycle (e.g. with 2mm pitch tape or if a multiplier is
         // given), we need to cycle through multiple pick locations. partInCycle is 1-based and goes to getPartsPerFeedCycle().
-        long offsetPitches = (getPartsPerFeedCycle() - partInCycle) % getPartsPerFeedCycle();
+        int offsetPitches = (getPartsPerFeedCycle() - partInCycle) % getPartsPerFeedCycle();
         Location feederLocation = new Location(partPitch.getUnits(), partPitch.multiply((double)offsetPitches).getValue(), 
                 0, 0, getRotationInFeeder());
         Location machineLocation = transformFeederToMachineLocation(feederLocation, visionOffset);
