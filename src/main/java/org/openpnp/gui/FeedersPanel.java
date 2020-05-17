@@ -510,9 +510,10 @@ public class FeedersPanel extends JPanel implements WizardContainer {
                 Feeder feeder = getSelection();
 
                 // Simulate a "one feeder" job, prepare the feeder.
-                List<Feeder> feedersToPrepare = new ArrayList<>();
-                feedersToPrepare.add(feeder);
-                feeder.prepareForJob(feedersToPrepare);
+                if (feeder.getJobPreparationLocation() != null) {
+                    feeder.prepareForJob(true);
+                }
+                feeder.prepareForJob(false);
 
                 // Check the nozzle tip package compatibility.
                 Nozzle nozzle = MainFrame.get().getMachineControls().getSelectedNozzle();
@@ -556,7 +557,7 @@ public class FeedersPanel extends JPanel implements WizardContainer {
                 feeder.postPick(nozzle);
 
                 // Perform the vacuum check, if enabled.
-                if (nozzle.isPartOnEnabled()) {
+                if (nozzle.isPartOnEnabled(Nozzle.PartOnStep.AfterPick)) {
                     if(!nozzle.isPartOn()) {
                         throw new JobProcessorException(nozzle, "No part detected.");
                     }

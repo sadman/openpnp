@@ -37,6 +37,7 @@ import org.openpnp.model.Named;
 import org.openpnp.model.Part;
 import org.openpnp.spi.Head;
 import org.openpnp.spi.HeadMountable;
+import org.openpnp.spi.Movable.MoveToOption;
 import org.openpnp.spi.Nozzle;
 import org.openpnp.spi.PropertySheetHolder;
 import org.openpnp.spi.base.SimplePropertySheetHolder;
@@ -320,6 +321,7 @@ public class GcodeDriver extends AbstractReferenceDriver implements Named, Runna
 
         // Check home complete response against user's regex
         String homeCompleteRegex = getCommand(null, CommandType.HOME_COMPLETE_REGEX);
+        String commandErrorRegex = getCommand(null, CommandType.COMMAND_ERROR_REGEX);
         if (homeCompleteRegex != null) {
             if (timeout == -1) {
                 timeout = Long.MAX_VALUE;
@@ -327,8 +329,16 @@ public class GcodeDriver extends AbstractReferenceDriver implements Named, Runna
             if (!containsMatch(responses, homeCompleteRegex)) {
                 long t = System.currentTimeMillis();
                 boolean done = false;
-                while (!done && System.currentTimeMillis() - t < timeout) {
-                    done = containsMatch(sendCommand(null, 250), homeCompleteRegex);
+                boolean err = false;
+                while (!done && !err && System.currentTimeMillis() - t < timeout) {
+                    responses = sendCommandNoFlush(null, 250); //Don't flush because the response we're looking for could have happened before this send
+                    if (commandErrorRegex != null) {
+                        err = containsMatch(responses, commandErrorRegex);
+                    }
+                    done = containsMatch(responses, homeCompleteRegex);
+                }
+                if (err) {
+                    throw new Exception("Controller raised an error during homing: " + responses);
                 }
                 if (!done) {
                     // Should never get here but just in case.
@@ -508,8 +518,33 @@ public class GcodeDriver extends AbstractReferenceDriver implements Named, Runna
     }
 
     @Override
-    public void moveTo(ReferenceHeadMountable hm, Location location, double speed)
+    public void moveTo(ReferenceHeadMountable hm, Location location, double speed, MoveToOption...options)
             throws Exception {
+        // for options make a local copy of all possibly affected variables
+        double backlashOffsetX = this.backlashOffsetX;
+        double backlashOffsetY = this.backlashOffsetY;
+        double backlashOffsetZ = this.backlashOffsetZ;
+        double backlashOffsetR = this.backlashOffsetR;
+        double nonSquarenessFactor = this.nonSquarenessFactor;
+        // check options
+        for (MoveToOption currentOption: options) {
+            switch (currentOption) {
+                case SpeedOverPrecision:     // for this move backslash is zero
+                    backlashOffsetX = 0;
+                    backlashOffsetY = 0;
+                    backlashOffsetZ = 0;
+                    backlashOffsetR = 0;
+                    break;
+                case RawMove:                   // for this move all corrections are zero
+                    backlashOffsetX = 0;
+                    backlashOffsetY = 0;
+                    backlashOffsetZ = 0;
+                    backlashOffsetR = 0;
+                    nonSquarenessFactor = 0;
+                    break;
+            }
+        }
+        
         // keep copy for calling subdrivers as to not add offset on offset
         Location locationOriginal = location;
 
@@ -731,16 +766,25 @@ public class GcodeDriver extends AbstractReferenceDriver implements Named, Runna
                  * response before continuing. We first search the initial responses from the
                  * command for the regex. If it's not found we then collect responses for up to
                  * timeoutMillis while searching the responses for the regex. As soon as it is
-                 * matched we continue. If it's not matched within the timeout we throw an
-                 * Exception.
+                 * matched we continue. If it's not matched within the timeout or the controller
+                 * reports an error, we throw an Exception.
                  */
                 String moveToCompleteRegex = getCommand(hm, CommandType.MOVE_TO_COMPLETE_REGEX);
+                String commandErrorRegex = getCommand(hm, CommandType.COMMAND_ERROR_REGEX);
                 if (moveToCompleteRegex != null) {
                     if (!containsMatch(responses, moveToCompleteRegex)) {
                         long t = System.currentTimeMillis();
                         boolean done = false;
-                        while (!done && System.currentTimeMillis() - t < timeoutMilliseconds) {
-                            done = containsMatch(sendCommand(null, 250), moveToCompleteRegex);
+                        boolean err = false;
+                        while (!done && !err && System.currentTimeMillis() - t < timeoutMilliseconds) {
+                            responses = sendCommandNoFlush(null, 250); //Don't flush because the response we're looking for could have happened before this send
+                            if (commandErrorRegex != null) {
+                                err = containsMatch(responses, commandErrorRegex);
+                            }
+                            done = containsMatch(responses, moveToCompleteRegex);
+                        }
+                        if (err) {
+                            throw new Exception("Controller raised an error during move: " + responses);
                         }
                         if (!done) {
                             throw new Exception("Timed out waiting for move to complete.");
@@ -826,92 +870,98 @@ public class GcodeDriver extends AbstractReferenceDriver implements Named, Runna
         }
     }
     
-    @Override
-    public String actuatorRead(ReferenceActuator actuator) throws Exception {
-        String command = getCommand(actuator, CommandType.ACTUATOR_READ_COMMAND);
+    private String actuatorRead(ReferenceActuator actuator, Double parameter) throws Exception {
+        /**
+         * The logic here is a little complicated. This is the only driver method that is
+         * not fire and forget when it comes to sub-drivers. In this case, we need to know
+         * if the command was serviced or not and throw an Exception if no (sub)driver was
+         * able to service it.
+         * 
+         * So, the rules are:
+         * 
+         * 1. If a (sub)driver has a command and regex defined, it is the servicer and must
+         *    either return a value or throw an Exception.
+         * 2. If a (sub)driver cannot service the command it should defer to to any
+         *    child sub-drivers.
+         * 3. If the top level driver cannot either service the command or have a sub-driver
+         *    service the command it should throw. 
+         */
+        String command;
+        if (parameter == null) {
+            command = getCommand(actuator, CommandType.ACTUATOR_READ_COMMAND);
+        }
+        else {
+            command = getCommand(actuator, CommandType.ACTUATOR_READ_WITH_DOUBLE_COMMAND);
+        }
         String regex = getCommand(actuator, CommandType.ACTUATOR_READ_REGEX);
-        if (command == null || regex == null) {
-            // If the command or regex is null we'll query the subdrivers. The first
-            // to respond with a non-null value wins.
+        if (command != null && regex != null) {
+            /**
+             * This driver has the command and regex defined, so it must service the command.
+             */
+            command = substituteVariable(command, "Id", actuator.getId());
+            command = substituteVariable(command, "Name", actuator.getName());
+            command = substituteVariable(command, "Index", actuator.getIndex());
+            if (parameter != null) {
+                command = substituteVariable(command, "DoubleValue", parameter);
+                command = substituteVariable(command, "IntegerValue", (int) parameter.doubleValue());
+            }
+
+            List<String> responses = sendGcode(command);
+
+            Pattern pattern = Pattern.compile(regex);
+            for (String line : responses) {
+                Matcher matcher = pattern.matcher(line);
+                if (matcher.matches()) {
+                    Logger.trace("actuatorRead response: {}", line);
+                    try {
+                        String s = matcher.group("Value");
+                        return s;
+                    }
+                    catch (IllegalArgumentException e) {
+                        throw new Exception(String.format("Actuator \"%s\" read error: Regex is missing \"Value\" capturing group. See https://github.com/openpnp/openpnp/wiki/GcodeDriver#actuator_read_regex", 
+                                actuator.getName()), e);
+                    }
+                    catch (Exception e) {
+                        throw new Exception(String.format("Actuator \"%s\" read error: Failed to parse response. See https://github.com/openpnp/openpnp/wiki/GcodeDriver#actuator_read_regex", 
+                                actuator.getName()), e);
+                    }
+                }
+            }
+            
+            throw new Exception(String.format("Actuator \"%s\" read error: No matching responses found.", actuator.getName()));
+        }
+        else {
+            /**
+             * If the command or regex is null we'll query the subdrivers. The first to respond
+             * with a non-null value wins.
+             */
             for (ReferenceDriver driver : subDrivers) {
                 String val = driver.actuatorRead(actuator);
                 if (val != null) {
                     return val;
                 }
             }
-            // If none of the subdrivers returned a value there's nothing left to
-            // do, so return null.
-            return null;
-        }
-
-        command = substituteVariable(command, "Id", actuator.getId());
-        command = substituteVariable(command, "Name", actuator.getName());
-        command = substituteVariable(command, "Index", actuator.getIndex());
-
-        List<String> responses = sendGcode(command);
-
-        for (String line : responses) {
-            if (line.matches(regex)) {
-                Logger.trace("actuatorRead response: {}", line);
-                Matcher matcher = Pattern.compile(regex).matcher(line);
-                matcher.matches();
-
-                try {
-                    String s = matcher.group("Value");
-                    return s;
-                }
-                catch (Exception e) {
-                    throw new Exception("Failed to read Actuator " + actuator.getName(), e);
-                }
+            /**
+             * If none of the subdrivers returned a value and this is the top level driver then
+             * we've exhausted all the options to service the command, so throw an error.
+             */
+            if (parent == null) {
+                throw new Exception(String.format("Actuator \"%s\" read error: Driver configuration is missing ACTUATOR_READ_COMMAND or ACTUATOR_READ_REGEX.", actuator.getName()));
+            }
+            else {
+                return null;
             }
         }
-
-        return null;
+    }
+    
+    @Override
+    public String actuatorRead(ReferenceActuator actuator) throws Exception {
+        return actuatorRead(actuator, null); 
     }
 
     @Override
     public String actuatorRead(ReferenceActuator actuator, double parameter) throws Exception {
-        String command = getCommand(actuator, CommandType.ACTUATOR_READ_WITH_DOUBLE_COMMAND);
-        String regex = getCommand(actuator, CommandType.ACTUATOR_READ_REGEX);
-        if (command == null || regex == null) {
-            // If the command or regex is null we'll query the subdrivers. The first
-            // to respond with a non-null value wins.
-            for (ReferenceDriver driver : subDrivers) {
-                String val = driver.actuatorRead(actuator, parameter);
-                if (val != null) {
-                    return val;
-                }
-            }
-            // If none of the subdrivers returned a value there's nothing left to
-            // do, so return null.
-            return null;
-        }
-
-        command = substituteVariable(command, "Id", actuator.getId());
-        command = substituteVariable(command, "Name", actuator.getName());
-        command = substituteVariable(command, "Index", actuator.getIndex());
-        command = substituteVariable(command, "DoubleValue", parameter);
-        command = substituteVariable(command, "IntegerValue", (int) parameter);
-
-        List<String> responses = sendGcode(command);
-
-        for (String line : responses) {
-            if (line.matches(regex)) {
-                Logger.trace("actuatorReadWithDouble response: {}", line);
-                Matcher matcher = Pattern.compile(regex).matcher(line);
-                matcher.matches();
-
-                try {
-                    String s = matcher.group("Value");
-                    return s;
-                }
-                catch (Exception e) {
-                    throw new Exception("Failed to read Actuator " + actuator.getName(), e);
-                }
-            }
-        }
-
-        return null;
+        return actuatorRead(actuator, (Double) parameter);
     }
 
     public synchronized void disconnect() {
@@ -954,12 +1004,18 @@ public class GcodeDriver extends AbstractReferenceDriver implements Named, Runna
             return new ArrayList<>();
         }
         List<String> responses = new ArrayList<>();
+        boolean first = true;
         for (String command : gCode.split("\n")) {
             command = command.trim();
             if (command.length() == 0) {
                 continue;
             }
-            responses.addAll(sendCommand(command, timeout));
+            if (first) {
+                responses.addAll(sendCommand(command, timeout));
+                first = false;
+            } else {
+                responses.addAll(sendCommandNoFlush(command, timeout));
+            }
         }
         return responses;
     }
@@ -974,6 +1030,13 @@ public class GcodeDriver extends AbstractReferenceDriver implements Named, Runna
         // Read any responses that might be queued up so that when we wait
         // for a response to a command we actually wait for the one we expect.
         responseQueue.drainTo(responses);
+        responses.clear();
+        
+        return sendCommandNoFlush(command, timeout);
+    }
+
+    protected List<String> sendCommandNoFlush(String command, long timeout) throws Exception {
+        List<String> responses = new ArrayList<>();
 
         Logger.debug("sendCommand({}, {})...", command, timeout);
 
@@ -1584,6 +1647,30 @@ public class GcodeDriver extends AbstractReferenceDriver implements Named, Runna
                 return transformedCoordinate - offset;
             }
             return transformedCoordinate;
+        }
+    }
+    
+    public static class ScalingTransform implements AxisTransform {
+
+        @Attribute(required = false)
+        private double scaleFactor = 1;
+
+        @Override
+        public double toTransformed(Axis axis, HeadMountable hm, double rawCoordinate) {
+            if (scaleFactor == 0) {
+                Logger.info("Scale factor 0 is not allowed, defaults to 1.");
+                scaleFactor = 1;
+            }
+            return rawCoordinate / scaleFactor;
+        }
+
+        @Override
+        public double toRaw(Axis axis, HeadMountable hm, double transformedCoordinate) {
+            if (scaleFactor == 0) {
+                Logger.info("Scale factor 0 is not allowed, defaults to 1.");
+                scaleFactor = 1;
+            }
+            return transformedCoordinate * scaleFactor;
         }
     }
     

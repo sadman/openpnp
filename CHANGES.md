@@ -1,6 +1,38 @@
 This file lists major or notable changes to OpenPnP in chronological order. This is not
 a complete change list, only those that may directly interest or affect users.
 
+# 2020-04-29
+
+## Advanced Camera Settle
+
+Camera Autosettle is now exposed on the GUI, it was significantly expanded to allow for
+different methods in image processing and for settling quantification. Graphical diagnostics 
+and image replay with motion "heat map" are provided. 
+
+## Advanced Part On/Off Detection
+
+Vacuum sensing part-on/part-off detection was significantly expanded to allow for differencial
+vacuum level assessment and adaptive dwell times. Graphical diagnostics are provided.
+
+# 2020-04-20
+
+## Improved Actuator Read Errors
+
+Actuator reads are used for a number of subsystems in OpenPnP, and this feature tends to be
+confusing to configure. Previously, a misconfigured actuator read would often result in
+a cryptic NullPointerException that was difficult to debug. This system has now been improved
+so that the Actuator will report the three most common errors: missing command, missing regex,
+and unmatched response.
+
+Additionally, actuatorRead() will no longer return null under any circumstance. It will either
+return a valid string (which may be empty) or throw a descriptive error.
+
+## GcodeDriver Test Framework
+
+A new GcodeServer class has been added, along with a number of small GcodeDriver based tests.
+The GcodeServer in combination with the test system allows end to end automated testing of complex
+features such as Actuators. 
+
 # 2020-04-12
 
 ## OpenCV Upgrade
